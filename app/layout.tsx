@@ -1,7 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import NavBar from './NavBar';
+import Nav from './Nav';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -15,11 +15,13 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  
   return (
     <html lang="en">
       <body className={inter.className}>
-        <NavBar brandText="Dat" links={[{ label: "Blog", href: "/blog" }, { label: "About", href: "/about" }]} />
-        {children}</body>
-    </html>
+        <Nav></Nav>
+        {children}
+      </body>
+    </html >
   );
 }
