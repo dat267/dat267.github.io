@@ -43,7 +43,7 @@ jobs:
       - name: Detect package manager
         id: detect-package-manager
         run: |
-          echo "${{ secrets.NEXT_PUBLIC_API_KEY }}"
+          echo $NEXT_PUBLIC_API_KEY
           if [ -f "${{ github.workspace }}/yarn.lock" ]; then
             echo "manager=yarn" >> $GITHUB_OUTPUT
             echo "command=install" >> $GITHUB_OUTPUT
