@@ -13,6 +13,8 @@ const Nav: React.FC = () => {
   const links = [
     { label: "Home", href: "/" },
     { label: "About", href: "/about" },
+    { label: "Sign in", href: "/signin" },
+    { label: "Sign up", href: "/signup" },
     // Add more links as needed
   ];
 
