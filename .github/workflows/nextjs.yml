@@ -36,14 +36,6 @@ concurrency:
 jobs:
   # Build job
   build:
-    env:
-      NEXT_PUBLIC_API_KEY: ${{ secrets.NEXT_PUBLIC_API_KEY }}
-      NEXT_PUBLIC_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_AUTH_DOMAIN }}
-      NEXT_PUBLIC_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_PROJECT_ID }}
-      NEXT_PUBLIC_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_STORAGE_BUCKET }}
-      NEXT_PUBLIC_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_MESSAGING_SENDER_ID }}
-      NEXT_PUBLIC_APP_ID: ${{ secrets.NEXT_PUBLIC_APP_ID }}
-      NEXT_PUBLIC_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_MEASUREMENT_ID }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -51,6 +43,7 @@ jobs:
       - name: Detect package manager
         id: detect-package-manager
         run: |
+          echo "${{ secrets.NEXT_PUBLIC_API_KEY }}"
           if [ -f "${{ github.workspace }}/yarn.lock" ]; then
             echo "manager=yarn" >> $GITHUB_OUTPUT
             echo "command=install" >> $GITHUB_OUTPUT
