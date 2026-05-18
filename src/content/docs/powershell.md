@@ -12,6 +12,7 @@ Remote script execution:
         $ScriptArgs
     )
     try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         $download = Invoke-RestMethod -Uri $Url -UserAgent "PowerShell"
         $code = $download -replace "^\uFEFF"
     }
@@ -80,12 +81,13 @@ This script dynamically generates and registers a persistent Windows Scheduled T
     if (!$User) { return }
     $Guid = New-Guid
     $TaskName = "UserLogonTask_$Guid"
-    $LogFile = Join-Path $env:TEMP "$TaskName.log"
     $WrappedScript = @"
 try {
-    & { $($Payload.ToString()) } *>&1 | Out-File -FilePath '$LogFile' -Append -Encoding UTF8
+    `$LogFile = Join-Path `$env:TEMP "$TaskName.log"
+    & { $($Payload.ToString()) } *>&1 | Out-File -FilePath `$LogFile -Append -Encoding UTF8
 } catch {
-    `$_ | Out-File -FilePath '$LogFile' -Append -Encoding UTF8
+    `$LogFile = Join-Path `$env:TEMP "$TaskName.log"
+    `$_ | Out-File -FilePath `$LogFile -Append -Encoding UTF8
 }
 "@
     $EncodedPayload = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($WrappedScript))
@@ -104,7 +106,7 @@ try {
     $Action.Path = "conhost.exe"
     $Action.Arguments = $TaskArgs
     $Scheduler.GetFolder("\").RegisterTaskDefinition($TaskName, $Task, 6, $null, $null, 3) | Out-Null
-    Write-Host "Task registered for $User. Log: $LogFile" -ForegroundColor Cyan
+    Write-Host "Task registered for $User. Log: %TEMP%\$TaskName.log" -ForegroundColor Cyan
 }
 ```
 
