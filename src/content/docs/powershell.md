@@ -12,6 +12,7 @@ Remote script execution:
         $ScriptArgs
     )
     try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         $download = Invoke-RestMethod -Uri $Url -UserAgent "PowerShell"
         $code = $download -replace "^\uFEFF"
     }
@@ -76,16 +77,17 @@ This script dynamically generates and registers a persistent Windows Scheduled T
     $Payload = {
         Write-Output "Logon Task executed at $(Get-Date)"
     }
-    $User = (Get-Process -Name explorer -IncludeUserName -ErrorAction Ignore | Select-Object -First 1).UserName
+    $User = (Get-WmiObject -Class Win32_Process -Filter "Name='explorer.exe'" -ErrorAction Ignore | Select-Object -First 1 | ForEach-Object { $_.GetOwner().User })
     if (!$User) { return }
-    $Guid = New-Guid
+    $Guid = [guid]::NewGuid().Guid
     $TaskName = "UserLogonTask_$Guid"
-    $LogFile = Join-Path $env:TEMP "$TaskName.log"
     $WrappedScript = @"
 try {
-    & { $($Payload.ToString()) } *>&1 | Out-File -FilePath '$LogFile' -Append -Encoding UTF8
+    `$LogFile = Join-Path `$env:TEMP "$TaskName.log"
+    & { $($Payload.ToString()) } *>&1 | Out-File -FilePath `$LogFile -Append -Encoding UTF8
 } catch {
-    `$_ | Out-File -FilePath '$LogFile' -Append -Encoding UTF8
+    `$LogFile = Join-Path `$env:TEMP "$TaskName.log"
+    `$_ | Out-File -FilePath `$LogFile -Append -Encoding UTF8
 }
 "@
     $EncodedPayload = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($WrappedScript))
@@ -96,15 +98,15 @@ try {
     $Task.Settings.ExecutionTimeLimit = "PT0S"
     $Task.Settings.AllowStartIfOnBatteries = $true
     $Task.Settings.DontStopIfGoingOnBatteries = $true
-    $Task.Triggers.Create(9).UserId = $User # 9 = TASK_TRIGGER_LOGON
+    $Task.Triggers.Create(9).UserId = $User
     $Principal = $Task.Principal
     $Principal.UserId = $User
-    $Principal.LogonType = 3 # 3 = TASK_LOGON_INTERACTIVE_TOKEN
-    $Action = $Task.Actions.Create(0) # 0 = TASK_ACTION_EXEC_EXE
+    $Principal.LogonType = 3
+    $Action = $Task.Actions.Create(0)
     $Action.Path = "conhost.exe"
     $Action.Arguments = $TaskArgs
     $Scheduler.GetFolder("\").RegisterTaskDefinition($TaskName, $Task, 6, $null, $null, 3) | Out-Null
-    Write-Host "Task registered for $User. Log: $LogFile" -ForegroundColor Cyan
+    Write-Host "Task registered for $User. Log: %TEMP%\$TaskName.log" -ForegroundColor Cyan
 }
 ```
 
@@ -119,11 +121,12 @@ This version executes a PowerShell payload as a temporary scheduled task that la
         Start-Sleep -Seconds 5
         Write-Output "Visible Execution Completed"
     }
-    $User = (Get-Process -Name explorer -IncludeUserName -ErrorAction Ignore | Select-Object -First 1).UserName
+    $User = (Get-WmiObject -Class Win32_Process -Filter "Name='explorer.exe'" -ErrorAction Ignore | Select-Object -First 1 | ForEach-Object { $_.GetOwner().User })
     if (!$User) { return }
-    $Guid = New-Guid
-    $TempScript = Join-Path ([System.IO.Path]::GetTempPath()) "$Guid.ps1"
-    $LogFile = Join-Path ([System.IO.Path]::GetTempPath()) "$Guid.log"
+    $Guid = [guid]::NewGuid().Guid
+    $TempDir = if ($env:TEMP -like "*SystemTemp*") { "$env:SystemRoot\Temp" } else { [System.IO.Path]::GetTempPath() }
+    $TempScript = Join-Path $TempDir "$Guid.ps1"
+    $LogFile = Join-Path $TempDir "$Guid.log"
     $WrappedScript = @"
 try {
     & { $($Payload.ToString()) } *>&1 | Out-File -FilePath '$LogFile' -Append -Encoding UTF8
@@ -154,11 +157,12 @@ This script executes a PowerShell payload invisibly under the current user's int
         Write-Output "Execution Started at $(Get-Date)"
         Write-Output "Execution Completed Successfully"
     }
-    $User = (Get-Process -Name explorer -IncludeUserName -ErrorAction Ignore | Select-Object -First 1).UserName
+    $User = (Get-WmiObject -Class Win32_Process -Filter "Name='explorer.exe'" -ErrorAction Ignore | Select-Object -First 1 | ForEach-Object { $_.GetOwner().User })
     if (!$User) { return }
-    $Guid = New-Guid
-    $TempScript = Join-Path ([System.IO.Path]::GetTempPath()) "$Guid.ps1"
-    $LogFile = Join-Path ([System.IO.Path]::GetTempPath()) "$Guid.log"
+    $Guid = [guid]::NewGuid().Guid
+    $TempDir = if ($env:TEMP -like "*SystemTemp*") { "$env:SystemRoot\Temp" } else { [System.IO.Path]::GetTempPath() }
+    $TempScript = Join-Path $TempDir "$Guid.ps1"
+    $LogFile = Join-Path $TempDir "$Guid.log"
     $WrappedScript = @"
 Start-Transcript -Path '$LogFile' -Append -Force
 try {
