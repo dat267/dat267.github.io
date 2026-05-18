@@ -69,7 +69,7 @@ This script fetches and executes a hidden background process that simulates brie
 
 ### Register a log on script
 
-This script dynamically generates and registers a persistent Windows Scheduled Task that executes a PowerShell payload at user logon with absolute invisibility. It packages the execution logic entirely inside the task definition and captures all output to a log file. **Note: This task detects the current interactive user via the owner of `explorer.exe` to support execution from SYSTEM contexts (e.g., ScreenConnect).**
+This script dynamically generates and registers a persistent Windows Scheduled Task that executes a PowerShell payload at user logon with absolute invisibility. It packages the execution logic entirely inside the task definition and captures all output to a log file. **Note: This uses the `Schedule.Service` COM object to allow registration without local administrator rights.**
 
 ```powershell
 & {
@@ -90,11 +90,20 @@ try {
 "@
     $EncodedPayload = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($WrappedScript))
     $TaskArgs = "--headless powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand $EncodedPayload"
-    $Principal = New-ScheduledTaskPrincipal -UserId $User -LogonType Interactive
-    $Action = New-ScheduledTaskAction -Execute "conhost.exe" -Argument $TaskArgs
-    $Trigger = New-ScheduledTaskTrigger -AtLogOn -User $User
-    $Settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-    Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger -Principal $Principal -Settings $Settings -Force | Out-Null
+    $Scheduler = New-Object -ComObject Schedule.Service
+    $Scheduler.Connect()
+    $Task = $Scheduler.NewTask(0)
+    $Task.Settings.ExecutionTimeLimit = "PT0S"
+    $Task.Settings.AllowStartIfOnBatteries = $true
+    $Task.Settings.DontStopIfGoingOnBatteries = $true
+    $Task.Triggers.Create(9).UserId = $User # 9 = TASK_TRIGGER_LOGON
+    $Principal = $Task.Principal
+    $Principal.UserId = $User
+    $Principal.LogonType = 3 # 3 = TASK_LOGON_INTERACTIVE_TOKEN
+    $Action = $Task.Actions.Create(0) # 0 = TASK_ACTION_EXEC_EXE
+    $Action.Path = "conhost.exe"
+    $Action.Arguments = $TaskArgs
+    $Scheduler.GetFolder("\").RegisterTaskDefinition($TaskName, $Task, 6, $null, $null, 3) | Out-Null
     Write-Host "Task registered for $User. Log: $LogFile" -ForegroundColor Cyan
 }
 ```
