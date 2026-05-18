@@ -114,7 +114,7 @@ This script dynamically generates and registers a persistent Windows Scheduled T
 
 ### Execute script as logged on user
 
-This script registers a temporary scheduled task to execute a PowerShell payload completely invisibly (avoiding console flashes via a VBScript wrapper) under the current user's interactive session. It streams the execution logs live to the host console, synchronously waits for the task to finish, and automatically cleans up by unregistering the task and removing temporary files.
+This script registers a temporary scheduled task to execute a PowerShell payload completely invisibly under the current user's interactive session using `conhost.exe --headless`. It utilizes `Start-Transcript` for robust logging and avoids the need for temporary VBScript or script files.
 
 ```powershell
 & {
@@ -126,14 +126,12 @@ This script registers a temporary scheduled task to execute a PowerShell payload
         Write-Output "Execution Completed Successfully"
     }
     $Guid = New-Guid
-    $TempScript = Join-Path $env:TEMP "$Guid.ps1"
     $TempOutput = Join-Path $env:TEMP "$Guid.log"
-    $TempVbs = Join-Path $env:TEMP "$Guid.vbs"
-    $TempOutput
-    "& { $($Payload.ToString()) } *>&1 | Out-File -FilePath '$TempOutput' -Append -Encoding UTF8" | Out-File -FilePath $TempScript -Encoding UTF8
-    'CreateObject("WScript.Shell").Run "powershell.exe -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & WScript.Arguments(0) & """", 0, False' | Out-File -FilePath $TempVbs -Encoding ASCII
+    Write-Host "Log file: $TempOutput" -ForegroundColor Cyan
+    $WrappedScript = "Start-Transcript -Path '$TempOutput' -Append -Force; try { & { $($Payload.ToString()) } } finally { Stop-Transcript }"
+    $EncodedPayload = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($WrappedScript))
     Register-ScheduledTask -TaskName $Guid -Force -Action (
-        New-ScheduledTaskAction -Execute "wscript.exe" -Argument "//B //Nologo `"$TempVbs`" `"$TempScript`""
+        New-ScheduledTaskAction -Execute "conhost.exe" -Argument "--headless powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand $EncodedPayload"
     ) -Principal (
         New-ScheduledTaskPrincipal -UserId ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) -LogonType Interactive
     ) -Settings (
@@ -141,27 +139,9 @@ This script registers a temporary scheduled task to execute a PowerShell payload
     ) | Out-Null
     Start-ScheduledTask -TaskName $Guid
     $Wait = 0
-    $Reader = $null
-    try {
-        while ((Get-ScheduledTask -TaskName $Guid -ErrorAction Ignore).State -in 'Running', 'Queued' -or $Wait++ -lt 3) {
-            if (-not $Reader -and (Test-Path $TempOutput)) {
-                $Stream = [System.IO.FileStream]::new($TempOutput, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
-                $Reader = [System.IO.StreamReader]::new($Stream, [System.Text.Encoding]::UTF8)
-            }
-            while ($Reader -and -not $Reader.EndOfStream) {
-                Write-Host $Reader.ReadLine()
-            }
-            Start-Sleep -Seconds 1
-        }
-        while ($Reader -and -not $Reader.EndOfStream) {
-            Write-Host $Reader.ReadLine()
-        }
-    }
-    finally {
-        if ($Reader) { $Reader.Dispose() }
+    while ((Get-ScheduledTask -TaskName $Guid -ErrorAction Ignore).State -in 'Running', 'Queued' -or $Wait++ -lt 3) {
+        Start-Sleep -Seconds 1
     }
     Unregister-ScheduledTask -TaskName $Guid -Confirm:$false -ErrorAction Ignore
-    Remove-Item -Path $TempScript -Force -ErrorAction Ignore
-    Remove-Item -Path $TempVbs -Force -ErrorAction Ignore
 }
 ```
