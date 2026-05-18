@@ -69,13 +69,15 @@ This script fetches and executes a hidden background process that simulates brie
 
 ### Register a log on script
 
-This script dynamically generates and registers a persistent Windows Scheduled Task that executes a PowerShell payload at user logon with absolute invisibility. It packages the execution logic entirely inside the task definition and captures all output to a log file. **Note: This task operates without relying on user environment variables.**
+This script dynamically generates and registers a persistent Windows Scheduled Task that executes a PowerShell payload at user logon with absolute invisibility. It packages the execution logic entirely inside the task definition and captures all output to a log file. **Note: This task detects the current interactive user via the owner of `explorer.exe` to support execution from SYSTEM contexts (e.g., ScreenConnect).**
 
 ```powershell
 & {
     $Payload = {
         Write-Output "Logon Task executed at $(Get-Date)"
     }
+    $User = (Get-Process -Name explorer -IncludeUserName -ErrorAction Ignore | Select-Object -First 1).UserName
+    if (!$User) { return }
     $Guid = New-Guid
     $TaskName = "UserLogonTask_$Guid"
     $LogFile = Join-Path $env:TEMP "$TaskName.log"
@@ -88,18 +90,18 @@ try {
 "@
     $EncodedPayload = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($WrappedScript))
     $TaskArgs = "--headless powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand $EncodedPayload"
-    $Principal = New-ScheduledTaskPrincipal -UserId ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) -LogonType Interactive
+    $Principal = New-ScheduledTaskPrincipal -UserId $User -LogonType Interactive
     $Action = New-ScheduledTaskAction -Execute "conhost.exe" -Argument $TaskArgs
-    $Trigger = New-ScheduledTaskTrigger -AtLogOn -User ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)
+    $Trigger = New-ScheduledTaskTrigger -AtLogOn -User $User
     $Settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
     Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger -Principal $Principal -Settings $Settings -Force | Out-Null
-    Write-Host "Task registered. Log: $LogFile" -ForegroundColor Cyan
+    Write-Host "Task registered for $User. Log: $LogFile" -ForegroundColor Cyan
 }
 ```
 
 ### Execute script as logged on user (Visible)
 
-This version executes a PowerShell payload as a temporary scheduled task that launches minimized to the taskbar. It uses a standard `.ps1` file for the payload and direct file redirection for logging, making it accessible for debugging.
+This version executes a PowerShell payload as a temporary scheduled task that launches minimized to the taskbar. It uses the owner of `explorer.exe` to target the active interactive user, making it reliable when triggered from admin tools like ScreenConnect.
 
 ```powershell
 & {
@@ -108,6 +110,8 @@ This version executes a PowerShell payload as a temporary scheduled task that la
         Start-Sleep -Seconds 5
         Write-Output "Visible Execution Completed"
     }
+    $User = (Get-Process -Name explorer -IncludeUserName -ErrorAction Ignore | Select-Object -First 1).UserName
+    if (!$User) { return }
     $Guid = New-Guid
     $TempScript = Join-Path ([System.IO.Path]::GetTempPath()) "$Guid.ps1"
     $LogFile = Join-Path ([System.IO.Path]::GetTempPath()) "$Guid.log"
@@ -122,7 +126,7 @@ try {
     Write-Host "Temp Script: $TempScript" -ForegroundColor Gray
     Write-Host "Log File:    $LogFile" -ForegroundColor Cyan
     $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Minimized -ExecutionPolicy Bypass -File `"$TempScript`""
-    $Principal = New-ScheduledTaskPrincipal -UserId ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) -LogonType Interactive
+    $Principal = New-ScheduledTaskPrincipal -UserId $User -LogonType Interactive
     $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
     Register-ScheduledTask -TaskName $Guid -Action $Action -Principal $Principal -Settings $Settings -Force | Out-Null
     Start-ScheduledTask -TaskName $Guid
@@ -133,7 +137,7 @@ try {
 
 ### Execute script as logged on user (Hidden)
 
-This script executes a PowerShell payload invisibly under the current user's interactive session using a temporary scheduled task. It captures all output to a persistent log file via `Start-Transcript` and automatically deletes the temporary script upon completion. **Note: This task operates without relying on user environment variables.**
+This script executes a PowerShell payload invisibly under the current user's interactive session using a temporary scheduled task. It uses the owner of `explorer.exe` to detect the user, ensuring correct operation when run from admin tools (SYSTEM context).
 
 ```powershell
 & {
@@ -141,6 +145,8 @@ This script executes a PowerShell payload invisibly under the current user's int
         Write-Output "Execution Started at $(Get-Date)"
         Write-Output "Execution Completed Successfully"
     }
+    $User = (Get-Process -Name explorer -IncludeUserName -ErrorAction Ignore | Select-Object -First 1).UserName
+    if (!$User) { return }
     $Guid = New-Guid
     $TempScript = Join-Path ([System.IO.Path]::GetTempPath()) "$Guid.ps1"
     $LogFile = Join-Path ([System.IO.Path]::GetTempPath()) "$Guid.log"
@@ -157,7 +163,7 @@ try {
     Write-Host "Temp Script: $TempScript" -ForegroundColor Gray
     Write-Host "Log File:    $LogFile" -ForegroundColor Cyan
     $Action = New-ScheduledTaskAction -Execute "conhost.exe" -Argument "--headless powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$TempScript`""
-    $Principal = New-ScheduledTaskPrincipal -UserId ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) -LogonType Interactive
+    $Principal = New-ScheduledTaskPrincipal -UserId $User -LogonType Interactive
     $Settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
     Register-ScheduledTask -TaskName $Guid -Action $Action -Principal $Principal -Settings $Settings -Force | Out-Null
     Start-ScheduledTask -TaskName $Guid
