@@ -30,11 +30,15 @@ The project uses standard npm scripts for development and deployment:
 ### Documentation Style
 - **Heading Separation:** Always include descriptive text between headings. Avoid back-to-back headings to ensure better readability and flow.
 - **Snippets:** Focus on complex, high-value inline scripts and one-liners rather than simple, well-known commands.
+- **Code Formatting:** Always remove unnecessary comments and blank lines within code blocks to keep snippets concise and focused.
 - **File Organization:** 
   - `bash.md`: Universal Bash/Linux scripts.
   - `termux.md`: Android-specific automation via Termux:API.
   - `powershell.md`: Windows-specific PowerShell snippets.
   - `git.md`: Git-related utilities and workflows.
+
+### Execution Control
+- **Commits & Pushes:** Only stage, commit, or push changes when explicitly requested by the user. Do not perform these actions automatically.
 
 ### Content Structure
 - Files in `src/content/docs/` use frontmatter to define the `title` and other Starlight-specific metadata.
