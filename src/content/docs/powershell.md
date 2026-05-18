@@ -186,7 +186,7 @@ try {
 This script mimics the `dua` CLI tool by efficiently calculating and displaying the disk usage of immediate subdirectories and files. It uses the .NET `EnumerateFiles` method for significantly better performance than `Get-ChildItem -Recurse` and handles "Access Denied" errors gracefully.
 
 ```powershell
-function Get-DiskUsage {
+& {
     param([string]$Path = ".")
     $FullRoot = Resolve-Path $Path
     Write-Host "Scanning: $FullRoot" -ForegroundColor Cyan
@@ -213,5 +213,5 @@ function Get-DiskUsage {
                        else { "{0:N2} KB" -f ($_.Size / 1KB) }
         $_ | Select-Object Name, Type, @{N="Size"; E={$DisplaySize}}
     } | Format-Table -AutoSize
-}
+} .
 ```
