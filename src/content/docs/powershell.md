@@ -181,23 +181,37 @@ try {
 }
 ```
 
-### Prevent system sleep
+### Disk Usage Analyzer
 
-This script utilizes the Windows API to prevent the system from entering sleep or turning off the display. It supports a configurable duration in hours and is designed to run invisibly as a background payload.
+This script mimics the `dua` CLI tool by efficiently calculating and displaying the disk usage of immediate subdirectories and files. It uses the .NET `EnumerateFiles` method for significantly better performance than `Get-ChildItem -Recurse` and handles "Access Denied" errors gracefully.
 
 ```powershell
-$DurationHours = 10
-$Signature = @'
-[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-public static extern uint SetThreadExecutionState(uint esFlags);
-'@
-$ES_CONTINUOUS = 0x80000000
-$ES_DISPLAY_REQUIRED = 0x00000002
-$ES_SYSTEM_REQUIRED = 0x00000001
-$Type = Add-Type -MemberDefinition $Signature -Name "Win32Sleep" -Namespace "Win32Functions" -PassThru
-$StartTime = Get-Date
-while ($DurationHours -eq 0 -or (Get-Date) -lt $StartTime.AddHours($DurationHours)) {
-    $Type::SetThreadExecutionState($ES_CONTINUOUS -bor $ES_DISPLAY_REQUIRED -bor $ES_SYSTEM_REQUIRED)
-    Start-Sleep -Seconds 60
+function Get-DiskUsage {
+    param([string]$Path = ".")
+    $FullRoot = Resolve-Path $Path
+    Write-Host "Scanning: $FullRoot" -ForegroundColor Cyan
+    $Results = Get-ChildItem $FullRoot | ForEach-Object {
+        $Item = $_
+        $TotalSize = 0
+        try {
+            if ($Item.PSIsContainer) {
+                $Files = [System.IO.Directory]::EnumerateFiles($Item.FullName, "*", [System.IO.SearchOption]::AllDirectories)
+                foreach ($f in $Files) { $TotalSize += (New-Object System.IO.FileInfo($f)).Length }
+            } else {
+                $TotalSize = $Item.Length
+            }
+        } catch { }
+        [PSCustomObject]@{
+            Name = $Item.Name
+            Size = $TotalSize
+            Type = if ($Item.PSIsContainer) { "Dir" } else { "File" }
+        }
+    }
+    $Results | Sort-Object Size -Descending | ForEach-Object {
+        $DisplaySize = if ($_.Size -gt 1GB) { "{0:N2} GB" -f ($_.Size / 1GB) }
+                       elseif ($_.Size -gt 1MB) { "{0:N2} MB" -f ($_.Size / 1MB) }
+                       else { "{0:N2} KB" -f ($_.Size / 1KB) }
+        $_ | Select-Object Name, Type, @{N="Size"; E={$DisplaySize}}
+    } | Format-Table -AutoSize
 }
 ```
