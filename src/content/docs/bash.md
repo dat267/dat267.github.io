@@ -30,10 +30,9 @@ Efficiently manage your local filesystem with these powerful one-liners.
 
 ### Flexible Bulk Rename
 
-Rename all files in a directory to a common base name with an incrementing numeric suffix. This is particularly useful for organizing sets of photos or downloaded assets.
+Rename all files in a directory to a common base name with an incrementing numeric suffix. For example, renaming all `.jpg` files to `vacation_001.jpg`, `vacation_002.jpg`, etc.
 
 ```bash
-# Example: Rename all .jpg files to "vacation_001.jpg", "vacation_002.jpg", etc.
 count=1; for f in *.jpg; do mv "$f" "$(printf "vacation_%03d.jpg" $((count++)))"; done
 ```
 
@@ -42,7 +41,7 @@ count=1; for f in *.jpg; do mv "$f" "$(printf "vacation_%03d.jpg" $((count++)))"
 Safely rename all files in the current directory to lowercase and replace spaces with underscores to ensure compatibility with all shells and systems.
 
 ```bash
-for f in *; do mv "$f" "$(echo "$f" | tr '[:upper:]' '[:lower:]' | tr ' ' '_')"; done
+for f in *; do new="$(echo "$f" | tr '[:upper:]' '[:lower:]' | tr ' ' '_')"; [ "$f" != "$new" ] && mv "$f" "$new"; done
 ```
 
 ### Find and Sort Large Files
@@ -61,9 +60,25 @@ Recursively find and remove all empty directories to keep your project structure
 find . -type d -empty -delete
 ```
 
-## Networking
+### Auto-Rotating Backup Creation
 
-Quick utilities for network diagnostics and sharing files.
+Compress a directory and keep only the latest 5 backups, deleting any older archives dynamically using a portable pipeline.
+
+```bash
+tar -czf "backup_$(date +%Y%m%d_%H%M%S).tar.gz" -C /source/dir . && ls -t backup_*.tar.gz | tail -n +6 | xargs rm -f
+```
+
+## Networking & Log Analysis
+
+Quick utilities for network diagnostics, log parsing, and sharing files.
+
+### Nginx Access Log Analyzer
+
+Analyze server access logs to extract the top 10 most frequent requesting IP addresses along with their hit counts.
+
+```bash
+awk '{ip[$1]++} END {for (i in ip) print ip[i], i}' access.log | sort -rn | head -n 10
+```
 
 ### Quick Web Server
 

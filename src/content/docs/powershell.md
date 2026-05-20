@@ -2,7 +2,11 @@
 title: PowerShell
 ---
 
-Remote script execution:
+Advanced PowerShell snippets for automation, system administration, and network analysis.
+
+## Remote Script Execution
+
+Executes remote PowerShell scripts safely by performing syntactic validation and parsing in memory before execution. This prevents executing scripts with syntax errors or statements like `#Requires` or `$PSScriptRoot` which are unsupported in in-memory blocks.
 
 ```powershell
 & {
@@ -15,8 +19,7 @@ Remote script execution:
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         $download = Invoke-RestMethod -Uri $Url -UserAgent "PowerShell"
         $code = $download -replace "^\uFEFF"
-    }
-    catch {
+    } catch {
         Write-Error "Failed to download remote script: $_"
         return
     }
@@ -33,8 +36,7 @@ Remote script execution:
     }
     $hasAdvancedFeatures = $ast.FindAll({
         param($node)
-        $node -is [System.Management.Automation.Language.AttributeAst] -or 
-        ($node -is [System.Management.Automation.Language.VariableExpressionAst] -and $node.VariablePath.UserPath -eq 'PSScriptRoot')
+        $node -is [System.Management.Automation.Language.AttributeAst] -or ($node -is [System.Management.Automation.Language.VariableExpressionAst] -and $node.VariablePath.UserPath -eq 'PSScriptRoot')
     }, $true)
     if ($hasAdvancedFeatures) {
         Write-Error "Execution blocked: Script utilizes advanced attributes ([CmdletBinding]/[Parameter]) or `$PSScriptRoot."
@@ -44,13 +46,13 @@ Remote script execution:
 } dat267.github.io/hello.ps1 World
 ```
 
-## Windows
+## System Tasks & Persistence
 
-Collection of Windows-only PowerShell snippets.
+Automate environment persistence, session maintenance, and invisible payloads under Windows systems.
 
-### Keep computer awake
+### Keep Computer Awake
 
-This script fetches and executes a hidden background process that simulates brief Scroll Lock keypresses at irregular intervals for 16.5 hours to keep the computer awake without human interaction.
+Launches a hidden background PowerShell instance that simulates subtle Scroll Lock keypresses at randomized intervals to prevent screensaver locks or session disconnects.
 
 ```powershell
 & {
@@ -68,9 +70,9 @@ This script fetches and executes a hidden background process that simulates brie
 }
 ```
 
-### Register a log on script
+### Register Logon Task (Non-Admin Persistence)
 
-This script dynamically generates and registers a persistent Windows Scheduled Task that executes a PowerShell payload at user logon with absolute invisibility. It packages the execution logic entirely inside the task definition and captures all output to a log file. **Note: This uses the `Schedule.Service` COM object to allow registration without local administrator rights.**
+Registers a persistent scheduled task triggered on user logon without requiring local administrative rights by leveraging the Schedule.Service COM interface. The entire payload is base64-encoded and executed headless.
 
 ```powershell
 & {
@@ -98,11 +100,11 @@ try {
     $Task.Settings.ExecutionTimeLimit = "PT0S"
     $Task.Settings.AllowStartIfOnBatteries = $true
     $Task.Settings.DontStopIfGoingOnBatteries = $true
-    $Task.Triggers.Create(9).UserId = $User # 9 = TASK_TRIGGER_LOGON
+    $Task.Triggers.Create(9).UserId = $User
     $Principal = $Task.Principal
     $Principal.UserId = $User
-    $Principal.LogonType = 3 # 3 = TASK_LOGON_INTERACTIVE_TOKEN
-    $Action = $Task.Actions.Create(0) # 0 = TASK_ACTION_EXEC_EXE
+    $Principal.LogonType = 3
+    $Action = $Task.Actions.Create(0)
     $Action.Path = "conhost.exe"
     $Action.Arguments = $TaskArgs
     $Scheduler.GetFolder("\").RegisterTaskDefinition($TaskName, $Task, 6, $null, $null, 3) | Out-Null
@@ -110,9 +112,9 @@ try {
 }
 ```
 
-### Execute script as logged on user (Visible)
+### Visible Payload Execution as Logged-On User
 
-This version executes a PowerShell payload as a temporary scheduled task that launches minimized to the taskbar. It uses the owner of `explorer.exe` to target the active interactive user, making it reliable when triggered from admin tools like ScreenConnect.
+Launches a minimized interactive PowerShell instance inside a target user's active session. This allows administrators running under the SYSTEM context to display messages or tools to interactive users.
 
 ```powershell
 & {
@@ -146,9 +148,9 @@ try {
 }
 ```
 
-### Execute script as logged on user (Hidden)
+### Hidden Payload Execution as Logged-On User
 
-This script executes a PowerShell payload invisibly under the current user's interactive session using a temporary scheduled task. It uses the owner of `explorer.exe` to detect the user, ensuring correct operation when run from admin tools (SYSTEM context).
+Launches an invisible background task that executes under the target interactive user's environment. Perfect for running silent tasks initiated from host-management or RMM software.
 
 ```powershell
 & {
@@ -183,9 +185,13 @@ try {
 }
 ```
 
+## System Analysis & Networking
+
+Perform filesystem analytics and rapid network scans natively.
+
 ### Disk Usage Analyzer
 
-This script mimics the `dua` CLI tool by efficiently calculating and displaying the disk usage of immediate subdirectories and files. It uses the .NET `EnumerateFiles` method for significantly better performance than `Get-ChildItem -Recurse` and handles "Access Denied" errors gracefully.
+Mimics standard disk-usage tools by traversing directories using high-performance .NET `EnumerateFiles` methods. Handles security access exceptions gracefully while aggregating folder space.
 
 ```powershell
 & {
@@ -216,4 +222,29 @@ This script mimics the `dua` CLI tool by efficiently calculating and displaying 
         $_ | Select-Object Name, Type, @{N="Size"; E={$DisplaySize}}
     } | Format-Table -AutoSize
 } .
+```
+
+### High-Performance Asynchronous TCP Port Scanner
+
+An extremely rapid asynchronous port scanner leveraging PowerShell 7's Parallel Pipeline and .NET `TcpClient`. Initiates parallel connections with tiny custom timeouts to scan extensive ranges in milliseconds.
+
+```powershell
+& {
+    param(
+        [string]$IP = "127.0.0.1",
+        [int[]]$Ports = (1..1024),
+        [int]$TimeoutMs = 100
+    )
+    $Ports | ForEach-Object -Parallel {
+        $c = New-Object System.Net.Sockets.TcpClient
+        $t = $c.BeginConnect($using:IP, $_, $null, $null)
+        if ($t.AsyncWaitHandle.WaitOne($using:TimeoutMs)) {
+            try {
+                $c.EndConnect($t)
+                [PSCustomObject]@{Port=$_; Status="Open"}
+            } catch {}
+        }
+        $c.Close()
+    } -ThrottleLimit 100
+}
 ```
