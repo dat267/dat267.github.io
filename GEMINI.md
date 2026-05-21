@@ -11,7 +11,7 @@ This project is a personal knowledge base and documentation site powered by [Ast
 ## Architecture & Content
 - **Content Location:** All documentation pages are located in `src/content/docs/`.
 - **Static Assets:** Public assets (like icons or scripts) are stored in the `public/` directory.
-- **Configuration:** Project settings are defined in `astro.config.mjs` and `package.json`. Custom Starlight sidebar styling, label formatting, and route transformations are handled programmatically in `src/routeData.ts`.
+- **Configuration:** Project settings are defined in `astro.config.mjs` and `package.json`.
 - **Deployment:** Automated via GitHub Actions (`.github/workflows/deploy.yml`) on every push to the `main` branch.
 - **Obsidian Compatibility:** Pre-configured via `.obsidian/app.json` to act as a plug-and-play Obsidian Vault. It hides configuration/developer files and defaults to relative Markdown links for seamless editing and Starlight build alignment.
 
@@ -37,15 +37,16 @@ The project uses standard npm scripts for development and deployment:
   - `termux.md`: Android-specific automation via Termux:API.
   - `powershell.md`: Windows-specific PowerShell snippets.
   - `git.md`: Git-related utilities and workflows.
-  - `runbooks/`: Directory containing operational runbooks and step-by-step procedures (e.g., `content-expansion.md`, `development.md`).
+  - `Runbooks/`: Directory containing operational runbooks and step-by-step procedures (e.g., `content-expansion.md`, `development.md`).
+  - `CI-CD & Admin_Ops/`: Test directory containing CI/CD setup files (e.g., `pipeline-setup.md`, `system-hardening.md`).
 
 ### Execution Control
 - **Commits & Pushes:** Only stage, commit, or push changes when explicitly requested by the user. Do not perform these actions automatically.
 
 ### Content Structure
-- Files in `src/content/docs/` use minimal frontmatter, containing only the `title` attribute. All page-specific metadata (descriptions, custom icons, and landing page ordering) is centrally managed in `src/components/AutoGrid.astro`'s `metaMap` dictionary.
-- The sidebar navigation is fully automated by Starlight, discovering and ordering all pages automatically without manual configuration.
-- The `index.mdx` file serves as the homepage but is hidden from the sidebar via `sidebar: hidden: true`.
+- Files in `src/content/docs/` are standard Markdown/MDX files using Starlight frontmatter conventions.
+- The sidebar navigation is fully automated by Starlight, discovering and organizing all files and folders dynamically.
+- The `index.mdx` file serves as the homepage but is hidden from the sidebar via `sidebar: { hidden: true }`.
 
 ## Agent Guidelines
 
