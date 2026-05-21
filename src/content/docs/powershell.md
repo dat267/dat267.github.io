@@ -1,9 +1,5 @@
 ---
 title: PowerShell
-description: Advanced PowerShell snippets, remote execution security parsing, and fast async network scanners.
-icon: setting
-sidebar:
-  order: 3
 ---
 
 Advanced PowerShell snippets for automation, system administration, and network analysis.

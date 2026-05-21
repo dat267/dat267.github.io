@@ -2,30 +2,50 @@
 import { getCollection } from 'astro:content';
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-// Fetch all docs
 const docs = await getCollection('docs');
 
-// Filter out the homepage and sort pages by sidebar order
-const sortedDocs = docs
-  .filter(doc => doc.id !== 'index.mdx' && doc.id !== 'index')
-  .sort((a, b) => {
-    const orderA = a.data.sidebar?.order ?? 999;
-    const orderB = b.data.sidebar?.order ?? 999;
-    return orderA - orderB;
-  });
+const metaMap: Record<string, { order: number; icon: string; description: string }> = {
+  bash: {
+    order: 1,
+    icon: 'document',
+    description: 'Universal shell scripts, automated media processing with FFmpeg, and portable system utilities.'
+  },
+  termux: {
+    order: 2,
+    icon: 'laptop',
+    description: 'Mobile task automation, telemetry gathering, and hardware level integrations via Termux:API.'
+  },
+  powershell: {
+    order: 3,
+    icon: 'setting',
+    description: 'Advanced PowerShell snippets, remote execution security parsing, and fast async network scanners.'
+  },
+  git: {
+    order: 4,
+    icon: 'git',
+    description: 'Custom repository management workflows, performance tuning, and advanced history rewrites.'
+  }
+};
 
-const pages = sortedDocs.map(doc => {
-  const title = doc.data.title;
-  const description = doc.data.description || 'Collection of scripts and automation workflows.';
-  
-  // Starlight generates routes based on the file ID/slug
-  const href = `/${doc.id.replace(/\.mdx?$/, '')}/`;
-  
-  // Retrieve custom icon from frontmatter, defaulting to document
-  const icon = doc.data.icon || 'document';
-  
-  return { title, description, href, icon };
-});
+const filteredDocs = docs.filter(doc => doc.id !== 'index.mdx' && doc.id !== 'index');
+
+const pages = filteredDocs
+  .map(doc => {
+    const slug = doc.id.replace(/\.mdx?$/, '');
+    const meta = metaMap[slug] || {
+      order: 999,
+      icon: 'document',
+      description: doc.data.description || 'Collection of scripts and automation workflows.'
+    };
+    return {
+      title: doc.data.title,
+      description: meta.description,
+      href: `/${slug}/`,
+      icon: meta.icon,
+      order: meta.order
+    };
+  })
+  .sort((a, b) => a.order - b.order);
 ---
 
 <CardGrid stagger>

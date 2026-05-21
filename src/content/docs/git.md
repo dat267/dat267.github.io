@@ -1,9 +1,5 @@
 ---
 title: Git
-description: Custom repository management workflows, performance tuning, and advanced history rewrites.
-icon: git
-sidebar:
-  order: 4
 ---
 
 A curated collection of advanced Git utilities, performance tuning commands, and history-rewriting scripts to keep repositories clean and optimal.

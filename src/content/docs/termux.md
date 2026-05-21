@@ -1,9 +1,5 @@
 ---
 title: Termux
-description: Mobile task automation, telemetry gathering, and hardware level integrations via Termux:API.
-icon: laptop
-sidebar:
-  order: 2
 ---
 
 Advanced automation and system integration scripts specifically for Termux on Android. These scripts leverage the Termux:API to interact with hardware, system settings, and device telemetry.

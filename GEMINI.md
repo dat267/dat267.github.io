@@ -41,7 +41,8 @@ The project uses standard npm scripts for development and deployment:
 - **Commits & Pushes:** Only stage, commit, or push changes when explicitly requested by the user. Do not perform these actions automatically.
 
 ### Content Structure
-- Files in `src/content/docs/` use frontmatter to define the `title` and other Starlight-specific metadata.
+- Files in `src/content/docs/` use minimal frontmatter, containing only the `title` attribute. All page-specific metadata (descriptions, custom icons, and landing page ordering) is centrally managed in `src/components/AutoGrid.astro`'s `metaMap` dictionary.
+- The sidebar navigation is fully automated by Starlight, discovering and ordering all pages automatically without manual configuration.
 - The `index.mdx` file serves as the homepage but is hidden from the sidebar via `sidebar: hidden: true`.
 
 ## Agent Guidelines
