@@ -6,44 +6,22 @@ Advanced PowerShell snippets for automation, system administration, and network 
 
 ## Remote Script Execution
 
-Executes remote PowerShell scripts safely by performing syntactic validation and parsing in memory before execution. This prevents executing scripts with syntax errors or statements like `#Requires` or `$PSScriptRoot` which are unsupported in in-memory blocks.
+Executes a remote PowerShell script directly in memory.
+
+### With Arguments
+
+Uses the call operator `&` and `[scriptblock]::Create` to download and run the script in memory, passing any trailing parameters directly to the script.
 
 ```powershell
-& {
-    param(
-        [string]$Url,
-        [Parameter(ValueFromRemainingArguments)]
-        $ScriptArgs
-    )
-    try {
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        $download = Invoke-RestMethod -Uri $Url -UserAgent "PowerShell"
-        $code = $download -replace "^\uFEFF"
-    } catch {
-        Write-Error "Failed to download remote script: $_"
-        return
-    }
-    $errors = $null
-    $tokens = $null
-    $ast = [System.Management.Automation.Language.Parser]::ParseInput($code, [ref]$tokens, [ref]$errors)
-    if ($errors) {
-        Write-Error "Remote script contains syntax errors and cannot be parsed."
-        return
-    }
-    if ($ast.ScriptRequirements) {
-        Write-Error "Execution blocked: Script contains '#Requires' statements which fail in raw memory blocks."
-        return
-    }
-    $hasAdvancedFeatures = $ast.FindAll({
-        param($node)
-        $node -is [System.Management.Automation.Language.AttributeAst] -or ($node -is [System.Management.Automation.Language.VariableExpressionAst] -and $node.VariablePath.UserPath -eq 'PSScriptRoot')
-    }, $true)
-    if ($hasAdvancedFeatures) {
-        Write-Error "Execution blocked: Script utilizes advanced attributes ([CmdletBinding]/[Parameter]) or `$PSScriptRoot."
-        return
-    }
-    & ([scriptblock]::Create($code)) @ScriptArgs
-} dat267.github.io/hello.ps1 World
+& ([scriptblock]::Create((irm https://dat267.github.io/hello.ps1))) World
+```
+
+### Without Arguments
+
+A minimal one-liner using `iex` (`Invoke-Expression`) and `irm` (`Invoke-RestMethod`) for immediate execution of parameterless scripts.
+
+```powershell
+iex (irm https://dat267.github.io/hello.ps1)
 ```
 
 ## System Tasks & Persistence
