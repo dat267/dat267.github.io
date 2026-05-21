@@ -6,6 +6,9 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'dat267.github.io',
+			customCss: [
+				'./src/styles/custom.css'
+			],
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/dat267/dat267.github.io' }
 			]

@@ -1,0 +1,131 @@
+/* Google Fonts Import for Outfit */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap');
+
+/* Custom styles to enhance dat267.github.io */
+
+:root {
+  /* Futuristic cosmic indigo and cyan-violet theme */
+  --sl-color-accent-low: hsl(250, 45%, 12%);
+  --sl-color-accent: hsl(250, 85%, 65%);
+  --sl-color-accent-high: hsl(250, 95%, 80%);
+
+  /* Base backgrounds */
+  --sl-color-bg: hsl(240, 20%, 6%);
+  --sl-color-bg-nav: rgba(10, 10, 18, 0.75);
+  --sl-color-bg-sidebar: rgba(10, 10, 18, 0.65);
+  
+  /* Gray palette */
+  --sl-color-gray-1: hsl(240, 15%, 92%);
+  --sl-color-gray-2: hsl(240, 10%, 80%);
+  --sl-color-gray-3: hsl(240, 8%, 55%);
+  --sl-color-gray-4: hsl(240, 8%, 35%);
+  --sl-color-gray-5: hsl(240, 10%, 18%);
+  --sl-color-gray-6: hsl(240, 12%, 10%);
+  
+  /* Typography */
+  --sl-font-sans: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --sl-font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', Courier, monospace;
+}
+
+/* Glassmorphism for main navigation & sidebar */
+header.header {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--sl-color-bg-nav) !important;
+}
+
+.sidebar-pane {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: var(--sl-color-bg-sidebar) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Premium gradient titles and highlights on splash page */
+.hero-block h1 {
+  background: linear-gradient(135deg, #ffffff 30%, var(--sl-color-accent-high) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em;
+}
+
+/* Style cards with an interactive glassmorphism & subtle neon glow */
+.card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 
+              0 0 20px rgba(120, 119, 198, 0.1);
+}
+
+/* Accent icons inside cards */
+.card .icon {
+  background-color: var(--sl-color-accent-low) !important;
+  color: var(--sl-color-accent-high) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding: 0.5em;
+  border-radius: 8px;
+}
+
+/* Accent borders for primary action buttons */
+.action.primary {
+  background: linear-gradient(135deg, var(--sl-color-accent) 0%, hsl(260, 90%, 60%) 100%) !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(120, 119, 198, 0.3);
+  transition: all 0.2s ease-in-out !important;
+}
+
+.action.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(120, 119, 198, 0.45);
+}
+
+/* Enhancing general typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--sl-font-sans);
+  letter-spacing: -0.02em;
+}
+
+/* Elegant search button styling */
+site-search button {
+  border-radius: 8px !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  transition: all 0.2s ease !important;
+}
+
+site-search button:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--sl-color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sl-color-gray-5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sl-color-gray-4);
+}

@@ -1,9 +1,62 @@
 ---
-title: Home
-sidebar:
-  hidden: true
+title: dat267's Knowledge Base
+description: A collection of technical snippets, automated workflows, and system guides.
+template: splash
+hero:
+  tagline: A curated collection of advanced technical snippets, command one-liners, and automated workflows.
+  actions:
+    - text: Explore Docs
+      link: /bash/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/dat267/dat267.github.io
+      icon: external
+      variant: minimal
 ---
 
-## Repository
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-https://github.com/dat267/dat267.github.io
+## Documentation Categories
+
+Access optimized configurations, one-liners, and scripts curated by environment and toolset.
+
+<CardGrid stagger>
+  <LinkCard
+    title="Bash & Linux"
+    description="Universal shell scripts, automated media processing with FFmpeg, and portable system utilities."
+    href="/bash/"
+    icon="document"
+  />
+  <LinkCard
+    title="Android & Termux"
+    description="Mobile task automation, telemetry gathering, and hardware level integrations via Termux:API."
+    href="/termux/"
+    icon="laptop"
+  />
+  <LinkCard
+    title="Windows & PowerShell"
+    description="Advanced PowerShell snippets, remote execution security parsing, and fast async network scanners."
+    href="/powershell/"
+    icon="setting"
+  />
+  <LinkCard
+    title="Git Utilities"
+    description="Custom repository management workflows, performance tuning, and advanced history rewrites."
+    href="/git/"
+    icon="git"
+  />
+</CardGrid>
+
+## Utilities & Links
+
+Additional project resources and repository details.
+
+<CardGrid>
+  <LinkCard
+    title="GitHub Repository"
+    description="Access the source code, open issues, or contribute to the repository directly."
+    href="https://github.com/dat267/dat267.github.io"
+    icon="github"
+  />
+</CardGrid>
