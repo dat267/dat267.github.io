@@ -34,22 +34,41 @@ const metaMap: Record<string, { order: number; icon: string; description: string
 
 const filteredDocs = docs.filter(doc => doc.id !== 'index.mdx' && doc.id !== 'index');
 
-const pages = filteredDocs
-  .map(doc => {
-    const slug = doc.id.replace(/\.mdx?$/, '');
-    const meta = metaMap[slug];
-    const order = doc.data.sidebar?.order ?? meta?.order ?? 999;
-    const icon = doc.data.icon ?? meta?.icon ?? 'document';
-    const description = doc.data.description ?? meta?.description ?? 'Collection of scripts and automation workflows.';
-    return {
-      title: doc.data.title,
-      description,
-      href: `/${slug}/`,
-      icon,
-      order
-    };
-  })
-  .sort((a, b) => a.order - b.order);
+const grouped = new Map<string, typeof docs>();
+for (const doc of filteredDocs) {
+  const slug = doc.id.replace(/\.mdx?$/, '');
+  const baseSlug = slug.split('/')[0];
+  if (!grouped.has(baseSlug)) {
+    grouped.set(baseSlug, []);
+  }
+  grouped.get(baseSlug)!.push(doc);
+}
+
+const pages = Array.from(grouped.entries()).map(([baseSlug, group]) => {
+  const sorted = [...group].sort((a, b) => {
+    const aOrder = a.data.sidebar?.order ?? 999;
+    const bOrder = b.data.sidebar?.order ?? 999;
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.id.localeCompare(b.id);
+  });
+  const primary = sorted[0];
+  const primarySlug = primary.id.replace(/\.mdx?$/, '');
+  const meta = metaMap[baseSlug];
+  const order = primary.data.sidebar?.order ?? meta?.order ?? 999;
+  const icon = primary.data.icon ?? meta?.icon ?? 'document';
+  const description = primary.data.description ?? meta?.description ?? 'Collection of scripts and automation workflows.';
+  let title = primary.data.title;
+  if (baseSlug === 'runbooks') {
+    title = 'Runbooks';
+  }
+  return {
+    title,
+    description,
+    href: `/${primarySlug}/`,
+    icon,
+    order
+  };
+}).sort((a, b) => a.order - b.order);
 ---
 
 <CardGrid stagger>
