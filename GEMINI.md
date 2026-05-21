@@ -11,7 +11,7 @@ This project is a personal knowledge base and documentation site powered by [Ast
 ## Architecture & Content
 - **Content Location:** All documentation pages are located in `src/content/docs/`.
 - **Static Assets:** Public assets (like icons or scripts) are stored in the `public/` directory.
-- **Configuration:** Project settings are defined in `astro.config.mjs` and `package.json`.
+- **Configuration:** Project settings are defined in `astro.config.mjs` and `package.json`. Custom Starlight sidebar styling, label formatting, and route transformations are handled programmatically in `src/routeData.ts`.
 - **Deployment:** Automated via GitHub Actions (`.github/workflows/deploy.yml`) on every push to the `main` branch.
 - **Obsidian Compatibility:** Pre-configured via `.obsidian/app.json` to act as a plug-and-play Obsidian Vault. It hides configuration/developer files and defaults to relative Markdown links for seamless editing and Starlight build alignment.
 

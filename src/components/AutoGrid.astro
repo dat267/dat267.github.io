@@ -4,7 +4,13 @@ import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 const docs = await getCollection('docs');
 
-const metaMap: Record<string, { order: number; icon: string; description: string }> = {
+const toTitleCase = (str: string) =>
+  str
+    .split(/[-_]+/)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+
+const metaMap: Record<string, { order: number; icon: string; description: string; title?: string }> = {
   bash: {
     order: 1,
     icon: 'document',
@@ -58,8 +64,8 @@ const pages = Array.from(grouped.entries()).map(([baseSlug, group]) => {
   const icon = primary.data.icon ?? meta?.icon ?? 'document';
   const description = primary.data.description ?? meta?.description ?? 'Collection of scripts and automation workflows.';
   let title = primary.data.title;
-  if (baseSlug === 'runbooks') {
-    title = 'Runbooks';
+  if (primary.id.includes('/')) {
+    title = meta?.title ?? toTitleCase(baseSlug);
   }
   return {
     title,

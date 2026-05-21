@@ -6,6 +6,7 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'dat267.github.io',
+			routeMiddleware: './src/routeData.ts',
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/dat267/dat267.github.io' }
 			]
