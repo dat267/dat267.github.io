@@ -1,5 +1,9 @@
 ---
 title: Bash
+description: Universal shell scripts, automated media processing with FFmpeg, and portable system utilities.
+icon: document
+sidebar:
+  order: 1
 ---
 
 A collection of useful bash one-liners and scripts for media processing, file management, and networking. These scripts are designed to be portable across most Unix-like environments.

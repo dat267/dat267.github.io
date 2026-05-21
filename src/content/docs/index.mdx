@@ -17,37 +17,13 @@ hero:
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+import AutoGrid from '../../components/AutoGrid.astro';
 
 ## Documentation Categories
 
 Access optimized configurations, one-liners, and scripts curated by environment and toolset.
 
-<CardGrid stagger>
-  <LinkCard
-    title="Bash & Linux"
-    description="Universal shell scripts, automated media processing with FFmpeg, and portable system utilities."
-    href="/bash/"
-    icon="document"
-  />
-  <LinkCard
-    title="Android & Termux"
-    description="Mobile task automation, telemetry gathering, and hardware level integrations via Termux:API."
-    href="/termux/"
-    icon="laptop"
-  />
-  <LinkCard
-    title="Windows & PowerShell"
-    description="Advanced PowerShell snippets, remote execution security parsing, and fast async network scanners."
-    href="/powershell/"
-    icon="setting"
-  />
-  <LinkCard
-    title="Git Utilities"
-    description="Custom repository management workflows, performance tuning, and advanced history rewrites."
-    href="/git/"
-    icon="git"
-  />
-</CardGrid>
+<AutoGrid />
 
 ## Utilities & Links
 
