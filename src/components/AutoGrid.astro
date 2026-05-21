@@ -22,7 +22,7 @@ const pages = sortedDocs.map(doc => {
   const href = `/${doc.id.replace(/\.mdx?$/, '')}/`;
   
   // Retrieve custom icon from frontmatter, defaulting to document
-  const icon = (doc.data as any).icon || 'document';
+  const icon = doc.data.icon || 'document';
   
   return { title, description, href, icon };
 });
