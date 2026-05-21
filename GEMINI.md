@@ -12,7 +12,6 @@ This project is a personal knowledge base and documentation site powered by [Ast
 - **Content Location:** All documentation pages are located in `src/content/docs/`.
 - **Static Assets:** Public assets (like icons or scripts) are stored in the `public/` directory.
 - **Configuration:** Project settings are defined in `astro.config.mjs` and `package.json`.
-- **Custom Styling:** Enhanced premium visuals (glassmorphism, interactive glow, Google Fonts, and animations) are defined in `src/styles/custom.css` and imported globally in `astro.config.mjs`.
 - **Deployment:** Automated via GitHub Actions (`.github/workflows/deploy.yml`) on every push to the `main` branch.
 
 ## Building and Running
