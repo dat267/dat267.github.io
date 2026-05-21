@@ -7,7 +7,7 @@ const docs = await getCollection('docs');
 
 // Filter out the homepage and sort pages by sidebar order
 const sortedDocs = docs
-  .filter(doc => doc.id !== 'index.mdx')
+  .filter(doc => doc.id !== 'index.mdx' && doc.id !== 'index')
   .sort((a, b) => {
     const orderA = a.data.sidebar?.order ?? 999;
     const orderB = b.data.sidebar?.order ?? 999;
