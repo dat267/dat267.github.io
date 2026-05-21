@@ -87,3 +87,43 @@ Start a Python-based web server that serves the current directory, allowing you 
 ```bash
 python3 -m http.server 8080 --bind 0.0.0.0
 ```
+
+## Systemd User Services
+
+Automate and manage persistent background processes on Linux without requiring root privileges.
+
+### Persistent Node/Astro Dev Server
+
+Create a persistent user-level systemd service to keep the local development server running continuously in the background, automatically recovering from crashes and surviving shell sessions.
+
+To configure a service that remains compatible with dynamic Node managers like FNM (Fast Node Manager), write the following service definition to `~/.config/systemd/user/dat-kb.service`:
+
+```ini
+[Unit]
+Description=Astro Starlight Local Dev Server
+After=network.target
+[Service]
+Type=simple
+WorkingDirectory=/home/dat/repos/dat267.github.io
+Environment="PATH=/home/dat/.local/share/fnm/aliases/default/bin:/usr/bin:/usr/local/bin"
+ExecStart=/home/dat/.local/share/fnm/aliases/default/bin/npm run dev
+Restart=on-failure
+RestartSec=5
+[Install]
+WantedBy=default.target
+```
+
+Activate, launch, and configure the background service to start automatically on user login:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user start dat-kb
+systemctl --user enable dat-kb
+```
+
+Manage and monitor the background process status and live output streams:
+
+```bash
+systemctl --user status dat-kb
+journalctl --user -u dat-kb -f
+```

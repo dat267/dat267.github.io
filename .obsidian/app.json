@@ -1,0 +1,21 @@
+{
+  "useMarkdownLinks": true,
+  "newLinkFormat": "relative",
+  "attachmentFolderType": "folder",
+  "attachmentFolderPath": "public",
+  "userIgnoreFilters": [
+    ".git/",
+    ".astro/",
+    ".github/",
+    "node_modules/",
+    "dist/",
+    "public/",
+    "src/components/",
+    "tsconfig.json",
+    "astro.config.mjs",
+    "package.json",
+    "package-lock.json",
+    "GEMINI.md",
+    "README.md"
+  ]
+}
