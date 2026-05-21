@@ -49,7 +49,7 @@ termux-microphone-record -l 30 ~/storage/downloads/memo_$(date +%Y%m%d_%H%M%S).m
 Announce the completion of a long-running task using the Android system's text-to-speech engine.
 
 ```sh
-your_command_here && termux-tts-speak "The operation has finished successfully."
+sleep 3 && termux-tts-speak "The operation has finished successfully."
 ```
 
 ### Battery Status Monitor & Speech Alert

@@ -65,7 +65,7 @@ find . -type d -empty -delete
 Compress a directory and keep only the latest 5 backups, deleting any older archives dynamically using a portable pipeline.
 
 ```bash
-tar -czf "backup_$(date +%Y%m%d_%H%M%S).tar.gz" -C /source/dir . && ls -t backup_*.tar.gz | tail -n +6 | xargs rm -f
+tar -czf "backup_$(date +%Y%m%d_%H%M%S).tar.gz" -C ./src . && ls -t backup_*.tar.gz | tail -n +6 | xargs rm -f
 ```
 
 ## Networking & Log Analysis
