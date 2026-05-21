@@ -10,7 +10,16 @@ Follow these steps to clone the repository and get started with local developmen
 
 ### 1. Clone the Repository
 
-Clone the project to your local machine using Git:
+Clone the project to your local machine using Git. 
+
+If you have SSH configured, use:
+
+```bash
+git clone git@github.com:dat267/dat267.github.io.git
+cd dat267.github.io
+```
+
+Alternatively, if SSH (Port 22) is blocked by a firewall, or as a general workaround, clone via HTTPS:
 
 ```bash
 git clone https://github.com/dat267/dat267.github.io.git
