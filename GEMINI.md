@@ -37,6 +37,7 @@ The project uses standard npm scripts for development and deployment:
   - `termux.md`: Android-specific automation via Termux:API.
   - `powershell.md`: Windows-specific PowerShell snippets.
   - `git.md`: Git-related utilities and workflows.
+  - `runbooks.md`: Site maintenance and operational runbooks.
 
 ### Execution Control
 - **Commits & Pushes:** Only stage, commit, or push changes when explicitly requested by the user. Do not perform these actions automatically.

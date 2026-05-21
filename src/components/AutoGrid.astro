@@ -24,6 +24,11 @@ const metaMap: Record<string, { order: number; icon: string; description: string
     order: 4,
     icon: 'git',
     description: 'Custom repository management workflows, performance tuning, and advanced history rewrites.'
+  },
+  runbooks: {
+    order: 5,
+    icon: 'open-book',
+    description: 'Operational procedures, content expansion guides, local environment lifecycle, and deployment troubleshooting.'
   }
 };
 
@@ -32,17 +37,16 @@ const filteredDocs = docs.filter(doc => doc.id !== 'index.mdx' && doc.id !== 'in
 const pages = filteredDocs
   .map(doc => {
     const slug = doc.id.replace(/\.mdx?$/, '');
-    const meta = metaMap[slug] || {
-      order: 999,
-      icon: 'document',
-      description: doc.data.description || 'Collection of scripts and automation workflows.'
-    };
+    const meta = metaMap[slug];
+    const order = doc.data.sidebar?.order ?? meta?.order ?? 999;
+    const icon = doc.data.icon ?? meta?.icon ?? 'document';
+    const description = doc.data.description ?? meta?.description ?? 'Collection of scripts and automation workflows.';
     return {
       title: doc.data.title,
-      description: meta.description,
+      description,
       href: `/${slug}/`,
-      icon: meta.icon,
-      order: meta.order
+      icon,
+      order
     };
   })
   .sort((a, b) => a.order - b.order);
