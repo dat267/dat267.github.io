@@ -8,6 +8,12 @@ export default defineConfig({
 			title: 'dat267.github.io',
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/dat267/dat267.github.io' }
+			],
+			sidebar: [
+				{ label: 'Bash', link: '/bash/' },
+				{ label: 'Termux', link: '/termux/' },
+				{ label: 'PowerShell', link: '/powershell/' },
+				{ label: 'Git', link: '/git/' }
 			]
 		}),
 	],
