@@ -2,17 +2,17 @@
 title: README
 ---
 
-# dat267.github.io
+## dat267.github.io
 
 <https://dat267.github.io>
 
 A personal knowledge base and documentation site powered by **Astro Starlight**. It serves as a centralized vault for technical snippets, commands, and guides.
 
-## Setup & Local Development
+### Setup & Local Development
 
 Follow these steps to clone the repository and get started with local development.
 
-### 1. Clone the Repository
+#### 1. Clone the Repository
 
 Clone the project to your local machine using Git.
 
@@ -30,7 +30,7 @@ git clone https://github.com/dat267/dat267.github.io.git
 cd dat267.github.io
 ```
 
-### 2. Install Dependencies
+#### 2. Install Dependencies
 
 Install the required Node.js packages using npm:
 
@@ -38,7 +38,7 @@ Install the required Node.js packages using npm:
 npm install
 ```
 
-### 3. Start the Dev Server
+#### 3. Start the Dev Server
 
 Launch the local Astro development server with hot-reloading:
 
@@ -48,7 +48,7 @@ npm run dev
 
 The site will be accessible locally at `http://localhost:4321`.
 
-### 4. Build and Preview
+#### 4. Build and Preview
 
 Generate a static production build in the `dist/` directory and preview it locally:
 
@@ -57,7 +57,7 @@ npm run build
 npm run preview
 ```
 
-## Vault Editing with Obsidian
+### Vault Editing with Obsidian
 
 This repository is pre-configured to be used as a distraction-free, plug-and-play **Obsidian Vault** for writing and editing documentation.
 
@@ -72,7 +72,7 @@ The custom configuration in `.obsidian/app.json` will automatically:
 * Enable relative Markdown links to maintain compatibility with the Starlight compiler.
 * Redirect dropped/pasted images and attachments to the `/public` folder automatically.
 
-## Always-On Background Dev Server
+### Always-On Background Dev Server
 
 For a seamless editing experience on Linux, you can configure a persistent `systemd` user service to keep the local dev server running in the background.
 
