@@ -4,11 +4,11 @@ title: PowerShell
 
 Advanced PowerShell snippets for automation, system administration, and network analysis.
 
-## Remote Script Execution
+# Remote Script Execution
 
 Executes a remote PowerShell script directly in memory.
 
-### With Arguments
+## With Arguments
 
 Uses the call operator `&` and `[scriptblock]::Create` to download and run the script in memory, passing any trailing parameters directly to the script.
 
@@ -16,7 +16,7 @@ Uses the call operator `&` and `[scriptblock]::Create` to download and run the s
 & ([scriptblock]::Create((irm https://dat267.github.io/hello.ps1))) World
 ```
 
-### Without Arguments
+## Without Arguments
 
 A minimal one-liner using `iex` (`Invoke-Expression`) and `irm` (`Invoke-RestMethod`) for immediate execution of parameterless scripts.
 
@@ -24,11 +24,11 @@ A minimal one-liner using `iex` (`Invoke-Expression`) and `irm` (`Invoke-RestMet
 iex (irm https://dat267.github.io/hello.ps1)
 ```
 
-## System Tasks & Persistence
+# System Tasks & Persistence
 
 Automate environment persistence, session maintenance, and invisible payloads under Windows systems.
 
-### Keep Computer Awake
+## Keep Computer Awake
 
 Launches a hidden background PowerShell instance that simulates subtle Scroll Lock keypresses at randomized intervals to prevent screensaver locks or session disconnects.
 
@@ -48,7 +48,7 @@ Launches a hidden background PowerShell instance that simulates subtle Scroll Lo
 }
 ```
 
-### Register Logon Task (Non-Admin Persistence)
+## Register Logon Task (Non-Admin Persistence)
 
 Registers a persistent scheduled task triggered on user logon without requiring local administrative rights by leveraging the Schedule.Service COM interface. The entire payload is base64-encoded and executed headless.
 
@@ -90,7 +90,7 @@ try {
 }
 ```
 
-### Visible Payload Execution as Logged-On User
+## Visible Payload Execution as Logged-On User
 
 Launches a minimized interactive PowerShell instance inside a target user's active session. This allows administrators running under the SYSTEM context to display messages or tools to interactive users.
 
@@ -126,7 +126,7 @@ try {
 }
 ```
 
-### Hidden Payload Execution as Logged-On User
+## Hidden Payload Execution as Logged-On User
 
 Launches an invisible background task that executes under the target interactive user's environment. Perfect for running silent tasks initiated from host-management or RMM software.
 
@@ -163,13 +163,13 @@ try {
 }
 ```
 
-## System Analysis & Networking
+# System Analysis & Networking
 
 Perform filesystem analytics and rapid network scans natively.
 
-### Disk Usage Analyzer
+## Disk Usage Analyzer
 
-Mimics standard disk-usage tools by traversing directories using high-performance .NET `EnumerateFiles` methods. Handles security access exceptions gracefully while aggregating folder space.
+Mimics standard disk-usage tools by traversing directories using high-performance.NET `EnumerateFiles` methods. Handles security access exceptions gracefully while aggregating folder space.
 
 ```powershell
 & {
@@ -202,9 +202,9 @@ Mimics standard disk-usage tools by traversing directories using high-performanc
 } .
 ```
 
-### High-Performance Asynchronous TCP Port Scanner
+## High-Performance Asynchronous TCP Port Scanner
 
-An extremely rapid asynchronous port scanner leveraging PowerShell 7's Parallel Pipeline and .NET `TcpClient`. Initiates parallel connections with tiny custom timeouts to scan extensive ranges in milliseconds.
+An extremely rapid asynchronous port scanner leveraging PowerShell 7's Parallel Pipeline and.NET `TcpClient`. Initiates parallel connections with tiny custom timeouts to scan extensive ranges in milliseconds.
 
 ```powershell
 & {
