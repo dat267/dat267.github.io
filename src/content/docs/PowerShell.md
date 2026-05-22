@@ -30,7 +30,7 @@ Automate environment persistence, session maintenance, and invisible payloads un
 
 ### Keep Computer Awake
 
-Launches a hidden background PowerShell instance that simulates subtle Scroll Lock keypresses at randomized intervals to prevent screensaver locks or session disconnects.
+Launches a hidden background PowerShell instance that simulates subtle Scroll Lock key presses at randomized intervals to prevent screensaver locks or session disconnects.
 
 ```powershell
 & {

@@ -18,5 +18,7 @@
     "GEMINI.md",
     "README.md"
   ],
-  "showInlineTitle": true
+  "showInlineTitle": true,
+  "newFileLocation": "folder",
+  "newFileFolderPath": "src/content/docs"
 }

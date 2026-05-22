@@ -46,7 +46,7 @@ for f in *; do new="$(echo "$f" | tr '[:upper:]' '[:lower:]' | tr ' ' '_')"; [ "
 
 ### Find and Sort Large Files
 
-Find the top 10 largest files in the current directory and its subdirectories, formatted for readability using human-friendly units.
+Find the top 10 largest files in the current directory and its sub-directories, formatted for readability using human-friendly units.
 
 ```bash
 find . -type f -exec du -h {} + | sort -hr | head -n 10

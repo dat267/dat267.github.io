@@ -25,12 +25,12 @@ This project is a personal knowledge base and documentation site powered by [Ast
 
 The project uses standard npm scripts for development and deployment:
 
-| Command | Action |
-|:--- |:--- |
-| `npm install` | Installs project dependencies. |
-| `npm run dev` | Starts the local development server at `http://localhost:4321`. |
-| `npm run build` | Generates a static production build in the `dist/` folder. |
-| `npm run preview` | Previews the production build locally. |
+| Command           | Action                                                          |
+| :---------------- | :-------------------------------------------------------------- |
+| `npm install`     | Installs project dependencies.                                  |
+| `npm run dev`     | Starts the local development server at `http://localhost:4321`. |
+| `npm run build`   | Generates a static production build in the `dist/` folder.      |
+| `npm run preview` | Previews the production build locally.                          |
 
 ### Development Conventions
 
@@ -51,7 +51,6 @@ The project uses standard npm scripts for development and deployment:
 
 #### Content Structure
 
-- Files in `src/content/docs/` are standard Markdown/MDX files using Starlight frontmatter conventions.
 - The sidebar navigation is fully automated by Starlight, discovering and organizing all files and folders dynamically.
 - The `index.mdx` file serves as the homepage but is hidden from the sidebar via `sidebar: { hidden: true }`.
 
