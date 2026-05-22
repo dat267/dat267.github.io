@@ -31,6 +31,11 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Obsidian
-.obsidian/
+.obsidian/*
 !.obsidian/app.json
+!.obsidian/plugins/
+.obsidian/plugins/*
+!.obsidian/plugins/obsidian-linter/
+.obsidian/plugins/obsidian-linter/*
+!.obsidian/plugins/obsidian-linter/data.json
 
