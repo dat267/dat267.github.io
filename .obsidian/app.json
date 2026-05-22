@@ -17,5 +17,6 @@
     "package-lock.json",
     "GEMINI.md",
     "README.md"
-  ]
+  ],
+  "showInlineTitle": true
 }
