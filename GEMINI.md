@@ -44,6 +44,7 @@ The project uses standard npm scripts for development and deployment:
   - `Termux.md`: Android-specific automation via Termux:API.
   - `PowerShell.md`: Windows-specific PowerShell snippets.
   - `Git.md`: Git-related utilities and workflows.
+  - `Go.md`: Go-specific robust command-line architectures and core utilities.
 
 #### Execution Control
 

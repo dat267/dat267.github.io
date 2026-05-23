@@ -39,3 +39,4 @@ pnpm-debug.log*
 .obsidian/plugins/obsidian-linter/*
 !.obsidian/plugins/obsidian-linter/data.json
 
+**/tmp/**
