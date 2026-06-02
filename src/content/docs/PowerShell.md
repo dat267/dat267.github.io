@@ -40,7 +40,7 @@ Launches a hidden background PowerShell instance that simulates subtle Scroll Lo
     $target = (Get-Date).AddHours($For)
     $dateString = $target.ToString('yyyy-MM-dd HH:mm:ss')
     $command = [string]::Format(
-        '`$wshell = New-Object -ComObject wscript.shell; `$end = (Get-Date "{0}").AddMinutes((Get-Random -Minimum -5 -Maximum 5)); while((Get-Date) -lt `$end){ `$wshell.SendKeys("{{SCROLLLOCK}}"); Start-Sleep -Milliseconds (Get-Random -Minimum 103 -Maximum 153); `$wshell.SendKeys("{{SCROLLLOCK}}"); Start-Sleep -Seconds (Get-Random -Minimum 33 -Maximum 183) }',
+        '$wshell = New-Object -ComObject wscript.shell; $end = (Get-Date "{0}").AddMinutes((Get-Random -Minimum -5 -Maximum 5)); while((Get-Date) -lt $end){{ $wshell.SendKeys("{{SCROLLLOCK}}"); Start-Sleep -Milliseconds (Get-Random -Minimum 103 -Maximum 153); $wshell.SendKeys("{{SCROLLLOCK}}"); Start-Sleep -Seconds (Get-Random -Minimum 33 -Maximum 183) }}',
         $dateString
     )
     Start-Process powershell -WindowStyle Hidden -ArgumentList "-Command", $command
