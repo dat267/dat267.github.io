@@ -2,7 +2,7 @@
   "useMarkdownLinks": true,
   "newLinkFormat": "relative",
   "attachmentFolderType": "folder",
-  "attachmentFolderPath": "public",
+  "attachmentFolderPath": "src/content/docs/attachments",
   "userIgnoreFilters": [
     ".git/",
     ".astro/",
@@ -14,9 +14,7 @@
     "tsconfig.json",
     "astro.config.mjs",
     "package.json",
-    "package-lock.json",
-    "GEMINI.md",
-    "README.md"
+    "package-lock.json"
   ],
   "showInlineTitle": true,
   "newFileLocation": "folder",
