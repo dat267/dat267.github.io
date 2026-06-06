@@ -71,9 +71,3 @@ The custom configuration in `.obsidian/app.json` will automatically:
 * Hide all build files, dependency folders, and configuration scripts from the file explorer, letting you focus entirely on your content under `src/content/docs/`.
 * Enable relative Markdown links to maintain compatibility with the Starlight compiler.
 * Redirect dropped/pasted images and attachments to the `/public` folder automatically.
-
-### Always-On Background Dev Server
-
-For a seamless editing experience on Linux, you can configure a persistent `systemd` user service to keep the local dev server running in the background.
-
-Refer to the **Systemd User Services** section in [bash.md](src/content/docs/bash.md) or `/bash/` on the live site for a detailed setup guide using FNM.

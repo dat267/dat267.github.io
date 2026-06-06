@@ -59,7 +59,7 @@ Registers a persistent scheduled task triggered on user logon without requiring 
     }
     $User = (Get-Process -Name explorer -IncludeUserName -ErrorAction Ignore | Select-Object -First 1).UserName
     if (!$User) { return }
-    $Guid = New-Guid
+    $Guid = [guid]::NewGuid()
     $TaskName = "UserLogonTask_$Guid"
     $WrappedScript = @"
 try {
@@ -76,8 +76,8 @@ try {
     $Scheduler.Connect()
     $Task = $Scheduler.NewTask(0)
     $Task.Settings.ExecutionTimeLimit = "PT0S"
-    $Task.Settings.AllowStartIfOnBatteries = $true
-    $Task.Settings.DontStopIfGoingOnBatteries = $true
+    $Task.Settings.DisallowStartIfOnBatteries = $false
+    $Task.Settings.StopIfGoingOnBatteries = $false
     $Task.Triggers.Create(9).UserId = $User
     $Principal = $Task.Principal
     $Principal.UserId = $User
@@ -102,43 +102,8 @@ Launches a minimized interactive PowerShell instance inside a target user's acti
         Write-Output "Visible Execution Completed"
     }
     $User = (Get-Process -Name explorer -IncludeUserName -ErrorAction Ignore | Select-Object -First 1).UserName
-    if (!$User) { return }
-    $Guid = New-Guid
-    $TempScript = Join-Path ([System.IO.Path]::GetTempPath()) "$Guid.ps1"
-    $LogFile = Join-Path ([System.IO.Path]::GetTempPath()) "$Guid.log"
-    $WrappedScript = @"
-try {
-    & { $($Payload.ToString()) } *>&1 | Out-File -FilePath '$LogFile' -Append -Encoding UTF8
-} finally {
-    Remove-Item -Path `$MyInvocation.MyCommand.Path -ErrorAction Ignore
-}
-"@
-    $WrappedScript | Out-File -FilePath $TempScript -Encoding UTF8
-    Write-Host "Temp Script: $TempScript" -ForegroundColor Gray
-    Write-Host "Log File:    $LogFile" -ForegroundColor Cyan
-    $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Minimized -ExecutionPolicy Bypass -File `"$TempScript`""
-    $Principal = New-ScheduledTaskPrincipal -UserId $User -LogonType Interactive
-    $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-    Register-ScheduledTask -TaskName $Guid -Action $Action -Principal $Principal -Settings $Settings -Force | Out-Null
-    Start-ScheduledTask -TaskName $Guid
-    while ((Get-ScheduledTask -TaskName $Guid).State -in 'Running', 'Queued') { Start-Sleep -Seconds 1 }
-    Unregister-ScheduledTask -TaskName $Guid -Confirm:$false
-}
-```
-
-### Hidden Payload Execution as Logged-On User
-
-Launches an invisible background task that executes under the target interactive user's environment. Perfect for running silent tasks initiated from host-management or RMM software.
-
-```powershell
-& {
-    $Payload = {
-        Write-Output "Execution Started at $(Get-Date)"
-        Write-Output "Execution Completed Successfully"
-    }
-    $User = (Get-Process -Name explorer -IncludeUserName -ErrorAction Ignore | Select-Object -First 1).UserName
-    if (!$User) { return }
-    $Guid = New-Guid
+    if (!$User) { throw "No active interactive user session found." }
+    $Guid = [guid]::NewGuid()
     $TempScript = Join-Path ([System.IO.Path]::GetTempPath()) "$Guid.ps1"
     $LogFile = Join-Path ([System.IO.Path]::GetTempPath()) "$Guid.log"
     $WrappedScript = @"
@@ -150,79 +115,84 @@ try {
     Remove-Item -Path `$MyInvocation.MyCommand.Path -ErrorAction Ignore
 }
 "@
-    $WrappedScript | Out-File -FilePath $TempScript -Encoding UTF8
-    Write-Host "Temp Script: $TempScript" -ForegroundColor Gray
-    Write-Host "Log File:    $LogFile" -ForegroundColor Cyan
-    $Action = New-ScheduledTaskAction -Execute "conhost.exe" -Argument "--headless powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$TempScript`""
-    $Principal = New-ScheduledTaskPrincipal -UserId $User -LogonType Interactive
-    $Settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-    Register-ScheduledTask -TaskName $Guid -Action $Action -Principal $Principal -Settings $Settings -Force | Out-Null
-    Start-ScheduledTask -TaskName $Guid
-    while ((Get-ScheduledTask -TaskName $Guid).State -in 'Running', 'Queued') { Start-Sleep -Seconds 1 }
-    Unregister-ScheduledTask -TaskName $Guid -Confirm:$false
+    try {
+        $WrappedScript | Out-File -FilePath $TempScript -Encoding UTF8
+        $Action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Minimized -ExecutionPolicy Bypass -File `"$TempScript`""
+        $Principal = New-ScheduledTaskPrincipal -UserId $User -LogonType Interactive
+        $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+        Register-ScheduledTask -TaskName $Guid -Action $Action -Principal $Principal -Settings $Settings -Force | Out-Null
+        Start-ScheduledTask -TaskName $Guid
+        while ((Get-ScheduledTask -TaskName $Guid).State -in 'Running', 'Queued') { Start-Sleep -Seconds 1 }
+        $TaskResult = (Get-ScheduledTaskInfo -TaskName $Guid).LastTaskResult
+        Write-Host "Task Exit Code: $TaskResult" -ForegroundColor Yellow
+    }
+    catch {
+        Write-Error $_
+    }
+    finally {
+        Unregister-ScheduledTask -TaskName $Guid -Confirm:$false -ErrorAction Ignore
+        if (Test-Path $TempScript) {
+            Remove-Item -Path $TempScript -ErrorAction Ignore
+        }
+        if (Test-Path $LogFile) {
+            Write-Host "Log Path: $LogFile" -ForegroundColor Cyan
+            Write-Host "--- Log Contents ---" -ForegroundColor Gray
+            Get-Content -Path $LogFile
+        }
+    }
 }
 ```
 
-## System Analysis & Networking
+### Hidden Payload Execution as Logged-On User
 
-Perform filesystem analytics and rapid network scans natively.
-
-### Disk Usage Analyzer
-
-Mimics standard disk-usage tools by traversing directories using high-performance.NET `EnumerateFiles` methods. Handles security access exceptions gracefully while aggregating folder space.
+Launches an invisible background task that executes under the target interactive user's environment. Perfect for running silent tasks initiated from host-management or RMM software.
 
 ```powershell
 & {
-    param([string]$Path = ".")
-    $FullRoot = Resolve-Path $Path
-    Write-Host "Scanning: $FullRoot" -ForegroundColor Cyan
-    $Results = Get-ChildItem $FullRoot | ForEach-Object {
-        $Item = $_
-        $TotalSize = 0
-        try {
-            if ($Item.PSIsContainer) {
-                $Files = [System.IO.Directory]::EnumerateFiles($Item.FullName, "*", [System.IO.SearchOption]::AllDirectories)
-                foreach ($f in $Files) { $TotalSize += (New-Object System.IO.FileInfo($f)).Length }
-            } else {
-                $TotalSize = $Item.Length
-            }
-        } catch { }
-        [PSCustomObject]@{
-            Name = $Item.Name
-            Size = $TotalSize
-            Type = if ($Item.PSIsContainer) { "Dir" } else { "File" }
+    $Payload = {
+        Write-Output "Execution Started at $(Get-Date)"
+	    Write-Output "Profile CurrentUserAllHosts: $($Profile.CurrentUserAllHosts)"
+	    Write-Output "Profile Present: $(Test-Path $Profile.CurrentUserAllHosts)"
+        Write-Output "Execution Completed Successfully"
+    }
+    $User = (Get-Process -Name explorer -IncludeUserName -ErrorAction Ignore | Select-Object -First 1).UserName
+    if (!$User) { throw "No active interactive user session found." }
+    $Guid = [guid]::NewGuid()
+    $TempScript = Join-Path ([System.IO.Path]::GetTempPath()) "$Guid.ps1"
+    $LogFile = Join-Path ([System.IO.Path]::GetTempPath()) "$Guid.log"
+    $WrappedScript = @"
+Start-Transcript -Path '$LogFile' -Append -Force
+try {
+    & { $($Payload.ToString()) }
+} finally {
+    Stop-Transcript
+    Remove-Item -Path `$MyInvocation.MyCommand.Path -ErrorAction Ignore
+}
+"@
+    try {
+        $WrappedScript | Out-File -FilePath $TempScript -Encoding UTF8
+        $Action = New-ScheduledTaskAction -Execute "conhost.exe" -Argument "--headless powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$TempScript`""
+        $Principal = New-ScheduledTaskPrincipal -UserId $User -LogonType Interactive
+        $Settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([timespan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+        Register-ScheduledTask -TaskName $Guid -Action $Action -Principal $Principal -Settings $Settings -Force | Out-Null
+        Start-ScheduledTask -TaskName $Guid
+        while ((Get-ScheduledTask -TaskName $Guid).State -in 'Running', 'Queued') { Start-Sleep -Seconds 1 }
+        $TaskResult = (Get-ScheduledTaskInfo -TaskName $Guid).LastTaskResult
+        Write-Host "Task Exit Code: $TaskResult" -ForegroundColor Yellow
+    }
+    catch {
+        Write-Error $_
+    }
+    finally {
+        Unregister-ScheduledTask -TaskName $Guid -Confirm:$false -ErrorAction Ignore
+        if (Test-Path $TempScript) {
+            Remove-Item -Path $TempScript -ErrorAction Ignore
+        }
+        if (Test-Path $LogFile) {
+            Write-Host "`nLog Path: $LogFile" -ForegroundColor Cyan
+            Write-Host "--- Log Contents ---" -ForegroundColor Gray
+            Get-Content -Path $LogFile
         }
     }
-    $Results | Sort-Object Size -Descending | ForEach-Object {
-        $DisplaySize = if ($_.Size -gt 1GB) { "{0:N2} GB" -f ($_.Size / 1GB) }
-                       elseif ($_.Size -gt 1MB) { "{0:N2} MB" -f ($_.Size / 1MB) }
-                       else { "{0:N2} KB" -f ($_.Size / 1KB) }
-        $_ | Select-Object Name, Type, @{N="Size"; E={$DisplaySize}}
-    } | Format-Table -AutoSize
-} .
-```
-
-### High-Performance Asynchronous TCP Port Scanner
-
-An extremely rapid asynchronous port scanner leveraging PowerShell 7's Parallel Pipeline and.NET `TcpClient`. Initiates parallel connections with tiny custom timeouts to scan extensive ranges in milliseconds.
-
-```powershell
-& {
-    param(
-        [string]$IP = "127.0.0.1",
-        [int[]]$Ports = (1..1024),
-        [int]$TimeoutMs = 100
-    )
-    $Ports | ForEach-Object -Parallel {
-        $c = New-Object System.Net.Sockets.TcpClient
-        $t = $c.BeginConnect($using:IP, $_, $null, $null)
-        if ($t.AsyncWaitHandle.WaitOne($using:TimeoutMs)) {
-            try {
-                $c.EndConnect($t)
-                [PSCustomObject]@{Port=$_; Status="Open"}
-            } catch {}
-        }
-        $c.Close()
-    } -ThrottleLimit 100
 }
 ```
