@@ -33,19 +33,7 @@ Automate environment persistence, session maintenance, and invisible payloads un
 Launches a hidden background PowerShell instance that simulates subtle Scroll Lock key presses at randomized intervals to prevent screensaver locks or session disconnects.
 
 ```powershell
-& {
-    param(
-        [double]$For = 16.5
-    )
-    $target = (Get-Date).AddHours($For)
-    $dateString = $target.ToString('yyyy-MM-dd HH:mm:ss')
-    $command = [string]::Format(
-        '$wshell = New-Object -ComObject wscript.shell; $end = (Get-Date "{0}").AddMinutes((Get-Random -Minimum -5 -Maximum 5)); while((Get-Date) -lt $end){{ $wshell.SendKeys("{{SCROLLLOCK}}"); Start-Sleep -Milliseconds (Get-Random -Minimum 103 -Maximum 153); $wshell.SendKeys("{{SCROLLLOCK}}"); Start-Sleep -Seconds (Get-Random -Minimum 33 -Maximum 183) }}',
-        $dateString
-    )
-    Start-Process powershell -WindowStyle Hidden -ArgumentList "-Command", $command
-    exit
-}
+& { param([double]$For=16.5) conhost --headless powershell -c "`$w=New-Object -Com wscript.shell;`$e=(date).AddHours($For).AddMinutes((Get-Random -Min -5 -Max 5));while((date) -lt `$e){`$w.SendKeys('{SCROLLLOCK}');sleep -m (Get-Random -Min 103 -Max 153);`$w.SendKeys('{SCROLLLOCK}');sleep (Get-Random -Min 33 -Max 183)}" } 10.5
 ```
 
 ### Register Logon Task (Non-Admin Persistence)
