@@ -30,7 +30,17 @@ Automate environment persistence, session maintenance, and invisible payloads un
 
 ### Keep Computer Awake
 
-Launches a hidden background PowerShell instance that simulates subtle Scroll Lock key presses at randomized intervals to prevent screensaver locks or session disconnects.
+#### Option 1
+
+Launches a hidden background PowerShell instance that directly blocks system sleep and display timeouts using native Windows API calls.
+
+```powershell
+& { param([double]$For=16.5) conhost --headless powershell -c "`$a=Add-Type -M '[DllImport(`"kernel32.dll`")]public static extern uint SetThreadExecutionState(uint f);' -Name S -Namespace W -PassThru;`$e=(date).AddHours($For).AddMinutes((Get-Random -Min -5 -Max 5));while((date) -lt `$e){`$a::SetThreadExecutionState(0x80000003);sleep 60}" } 10.5
+```
+
+#### Option 2
+
+Launches a hidden background PowerShell instance that simulates subtle key presses at randomized intervals to prevent screensaver locks or session disconnects.
 
 ```powershell
 & { param([double]$For=16.5) conhost --headless powershell -c "`$w=New-Object -Com wscript.shell;`$e=(date).AddHours($For).AddMinutes((Get-Random -Min -5 -Max 5));while((date) -lt `$e){`$w.SendKeys('{F15}');sleep (Get-Random -Min 33 -Max 183)}" } 10.5
