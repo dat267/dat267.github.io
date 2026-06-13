@@ -50,7 +50,7 @@ The project uses standard npm scripts for development and deployment:
 
 ### Agent Guidelines
 
-#### GEMINI.md Maintenance
+#### AGENTS.md Maintenance
 
 - This file serves as the primary context for future AI sessions.
 - **Self-Update Mandate:** On any significant deviation in project architecture, tools, conventions, or **documentation contents** (e.g., major new sections or refactors), you must update this file to reflect the new state of the project.
