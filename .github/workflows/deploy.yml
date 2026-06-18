@@ -22,6 +22,8 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install
+      - name: Check formatting
+        run: npm run format:check
       - name: Build Astro
         run: npm run build
       - name: Upload artifact

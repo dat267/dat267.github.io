@@ -6,10 +6,14 @@
     "dev": "astro dev --host",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "format:check": "prettier --check \"src/**/*.{md,css,ts}\" \"astro.config.mjs\""
   },
   "dependencies": {
     "@astrojs/starlight": "*",
     "astro": "*"
+  },
+  "devDependencies": {
+    "prettier": "^3.8.4"
   }
 }

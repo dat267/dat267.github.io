@@ -1,0 +1,181 @@
+/* Custom CSS overrides to give the Starlight site a premium dark developer theme */
+
+:root {
+  /* Default font stack */
+  --sl-font-system:
+    "Outfit", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+  --sl-font-mono:
+    "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, monospace;
+
+  /* Premium Violet / Amethyst Accent Theme */
+  --sl-color-accent-low: #2e1065;
+  --sl-color-accent: #a855f7;
+  --sl-color-accent-high: #f3e8ff;
+
+  /* Dark mode theme color variables */
+  --sl-color-white: #fafafa;
+  --sl-color-gray-1: #f4f4f5;
+  --sl-color-gray-2: #e4e4e7;
+  --sl-color-gray-3: #a1a1aa;
+  --sl-color-gray-4: #52525b;
+  --sl-color-gray-5: #27272a;
+  --sl-color-gray-6: #18181b;
+  --sl-color-black: #09090b;
+
+  --sl-color-bg: #09090b;
+  --sl-color-bg-nav: #0f0f13;
+  --sl-color-bg-sidebar: #09090b;
+  --sl-color-bg-inline-code: #27272a;
+
+  /* Custom typography sizes & widths */
+  --sl-content-width: 48rem;
+}
+
+/* Light mode overrides (sleek light slate with amethyst accents) */
+:root[data-theme="light"] {
+  --sl-color-accent-low: #f3e8ff;
+  --sl-color-accent: #8b5cf6;
+  --sl-color-accent-high: #4c1d95;
+
+  --sl-color-white: #09090b;
+  --sl-color-gray-1: #18181b;
+  --sl-color-gray-2: #27272a;
+  --sl-color-gray-3: #71717a;
+  --sl-color-gray-4: #d4d4d8;
+  --sl-color-gray-5: #f4f4f5;
+  --sl-color-gray-6: #fafafa;
+  --sl-color-black: #ffffff;
+
+  --sl-color-bg: #ffffff;
+  --sl-color-bg-nav: #fafafa;
+  --sl-color-bg-sidebar: #fafafa;
+  --sl-color-bg-inline-code: #f4f4f5;
+}
+
+/* Premium enhancements */
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--sl-color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--sl-color-gray-4);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sl-color-accent);
+}
+
+/* Code block adjustments: clean border, soft shadow, modern mono font */
+pre {
+  border: 1px solid var(--sl-color-gray-5);
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1);
+  border-radius: 8px !important;
+}
+
+/* Table styling premium polish */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.5rem 0;
+  font-size: 0.9em;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+}
+
+th {
+  background-color: var(--sl-color-gray-6);
+  color: var(--sl-color-white);
+  font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--sl-color-gray-5);
+}
+
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--sl-color-gray-5);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+/* Dynamic hero section animation & styling */
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: 4rem 0 !important;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(168, 85, 247, 0.08) 0%,
+    transparent 60%
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Custom Landing Page Card Grid */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 3rem;
+  padding: 0 1.5rem;
+}
+
+.kb-card {
+  display: block;
+  text-decoration: none;
+  background-color: var(--sl-color-gray-6);
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  color: var(--sl-color-white);
+}
+
+.kb-card:hover {
+  border-color: var(--sl-color-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px -10px rgba(168, 85, 247, 0.2);
+  text-decoration: none;
+}
+
+.kb-card h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.25rem;
+  color: var(--sl-color-white);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.kb-card p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--sl-color-gray-3);
+  line-height: 1.5;
+}
