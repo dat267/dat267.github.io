@@ -1,7 +1,3 @@
----
-title: README
----
-
 ## dat267.github.io
 
 <https://dat267.github.io>
