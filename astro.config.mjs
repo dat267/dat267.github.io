@@ -7,7 +7,6 @@ export default defineConfig({
     starlight({
       title: "dat267.github.io",
       routeMiddleware: "./src/routeData.ts",
-      customCss: ["./src/styles/custom.css"],
       social: [
         {
           icon: "github",

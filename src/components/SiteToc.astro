@@ -1,0 +1,51 @@
+---
+import { getCollection, render } from "astro:content";
+
+const docs = await getCollection("docs");
+const filteredPages = docs.filter(
+  (page) => page.id !== "index" && page.id !== "",
+);
+
+const pages = await Promise.all(
+  filteredPages.map(async (page) => {
+    const { headings } = await render(page);
+    return { ...page, headings };
+  }),
+);
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<nav>
+  {
+    pages.map((page) => (
+      <section>
+        <h3>
+          <a href={`${base}/${page.id}/`}>{page.data.title}</a>
+        </h3>
+
+        {page.data.description && <p>{page.data.description}</p>}
+
+        {page.headings.length > 0 && (
+          <ul>
+            {page.headings
+              .filter((h) => h.depth >= 2 && h.depth <= 3)
+              .map((heading) => (
+                <li
+                  style={
+                    heading.depth === 3
+                      ? "margin-left: 1.25rem; list-style-type: circle;"
+                      : ""
+                  }
+                >
+                  <a href={`${base}/${page.id}/#${heading.slug}`}>
+                    {heading.text}
+                  </a>
+                </li>
+              ))}
+          </ul>
+        )}
+      </section>
+    ))
+  }
+</nav>
