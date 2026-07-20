@@ -19,7 +19,7 @@ This project is a personal knowledge base and documentation site powered by [Ast
 - **Content Location:** All documentation pages are located in `src/content/docs/`.
 - **Static Assets:** Public assets (like icons or scripts) are stored in the `public/` directory (e.g., `public/hello.ps1`, `public/favicon.svg`).
 - **Custom Components:** A `SiteToc.astro` component in `src/components/` renders the index page, dynamically listing all docs with their headings.
-- **Route Middleware:** `src/routeData.ts` normalizes sidebar group labels to match filesystem casing, enabling subdirectory support.
+- **Route Middleware:** No longer used — directory names match sidebar labels directly (e.g., `Languages/`, `Tools/`, `Platforms/`).
 - **Configuration:** Project settings are defined in `astro.config.mjs` and `package.json`.
 - **Deployment:** Automated via GitHub Actions (`.github/workflows/deploy.yml`) on every push to the `main` branch. CI includes a `format:check` step using Prettier.
 - **Obsidian Compatibility:** Pre-configured via `.obsidian/app.json` to act as a plug-and-play Obsidian Vault. It hides configuration/developer files and defaults to relative Markdown links for seamless editing and Starlight build alignment. Attachments are stored in `src/content/docs/attachments/`.
