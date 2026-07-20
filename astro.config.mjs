@@ -14,6 +14,7 @@ export default defineConfig({
           href: "https://github.com/dat267/dat267.github.io",
         },
       ],
+      lastUpdated: true,
     }),
   ],
 });

@@ -4,7 +4,7 @@ description: Bash-specific extensions and patterns for automation, file processi
 icon: seti:terminal
 ---
 
-For POSIX-compatible shell tricks see the [Sh](/sh/) page. This page covers bash-specific features (`[[ ]]`, arrays, `local -n`, `wait -n`, process substitution).
+For POSIX-compatible shell tricks see the [Sh](/languages/sh/) page. This page covers bash-specific features (`[[ ]]`, arrays, `local -n`, `wait -n`, process substitution).
 
 ## Audio Conversion
 
