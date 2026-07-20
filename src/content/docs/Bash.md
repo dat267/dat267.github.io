@@ -1,10 +1,10 @@
 ---
 title: Bash
-description: POSIX-compliant shell scripts and bash-specific tricks for automation, file processing, concurrency, and data extraction.
+description: Bash-specific extensions and patterns for automation, file processing, concurrency, and data extraction.
 icon: seti:terminal
 ---
 
-All scripts are compatible with `sh`, `bash`, and `zsh` unless otherwise noted.
+For POSIX-compatible shell tricks see the [Sh](/sh/) page. This page covers bash-specific features (`[[ ]]`, arrays, `local -n`, `wait -n`, process substitution).
 
 ## Audio Conversion
 
