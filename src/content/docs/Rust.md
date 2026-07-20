@@ -1,12 +1,10 @@
 ---
 title: Rust
+description: Cargo configuration, optimization profiles, cross-compilation, Clippy linting, and workspace management for Rust projects.
+icon: seti:rust
 ---
 
-Advanced Rust and Cargo configuration patterns, optimization profiles, and compiler options for production-ready binaries.
-
 ## Cargo Configuration
-
-Customize compiler and linker options to optimize binary size, execution speed, and dependency builds.
 
 ### Optimization Profile
 
@@ -32,12 +30,64 @@ target-dir = "/tmp/cargo-target"
 
 ## Cross Compilation
 
-Compile Rust projects for target platforms without installing toolchains locally.
-
 ### Cross Compiler Container
 
 Compile to a Musl-based target utilizing the `cross` tool to generate statically linked binaries.
 
 ```bash
 cross build --target x86_64-unknown-linux-musl --release
+```
+
+## Linting with Clippy
+
+### CI-Ready Clippy Configuration
+
+Configure Clippy to deny all warnings and specific lint groups in CI, ensuring no new warnings are introduced.
+
+```toml
+# .clippy.toml or in Cargo.toml under [lints.clippy]
+pedantic = "deny"
+nursery = "deny"
+cargo = "deny"
+```
+
+Run Clippy explicitly:
+
+```bash
+cargo clippy -- -D warnings
+```
+
+## Workspace Management
+
+### Multi-Crate Workspace
+
+Organize a project with multiple interdependent crates in a single workspace, sharing a single `Cargo.lock` and `target/` directory.
+
+```toml
+# Cargo.toml (workspace root)
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+```
+
+Each crate lives under `crates/crate-a`, `crates/crate-b`, etc.
+
+## Conditional Compilation
+
+### Feature-Gated Code
+
+Conditionally compile code based on enabled Cargo features, useful for optional dependencies or platform-specific behavior.
+
+```rust
+#[cfg(feature = "metrics")]
+fn emit_metric(name: &str) {
+    // instrumentation code
+}
+```
+
+Define the feature in `Cargo.toml`:
+
+```toml
+[features]
+metrics = []
 ```

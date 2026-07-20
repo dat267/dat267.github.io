@@ -1,8 +1,8 @@
 ---
 title: PowerShell
+description: PowerShell scripts for remote execution, system administration, task persistence, and session management on Windows.
+icon: seti:powershell
 ---
-
-Advanced PowerShell snippets for automation, system administration, and network analysis.
 
 ## Remote Script Execution
 

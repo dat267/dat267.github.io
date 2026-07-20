@@ -1,8 +1,8 @@
 ---
 title: Android
+description: Media player configuration, ADB utilities, Termux setup, and system tweaks for Android devices.
+icon: seti:android
 ---
-
-A collection of system tweaks, media player configurations, and optimization guides for Android devices.
 
 ## MPV Media Player
 
@@ -45,3 +45,54 @@ DOWN add volume -2
 a cycle audio
 s cycle sub
 ```
+
+## ADB Debug Bridge
+
+### Screen Recording
+
+Record the device screen at 2 Mbps, limiting the capture to 30 seconds, then pull the video to the host.
+
+```bash
+adb shell screenrecord /sdcard/screen.mp4 --bit-rate 2M --time-limit 30
+adb pull /sdcard/screen.mp4
+```
+
+### Wireless Debugging
+
+Connect over TCP/IP after enabling wireless debugging on the device under Developer options.
+
+```bash
+adb pair 192.168.1.100:41339
+adb connect 192.168.1.100:39835
+scrcpy
+```
+
+### Focused Logcat
+
+Filter logcat output by PID and priority level to isolate a specific application's logs.
+
+```bash
+adb logcat --pid=$(adb shell pidof -s com.example.app) -v brief *:E
+```
+
+## Termux
+
+### Basic Setup
+
+Grant storage access and update the package repositories in a fresh Termux installation.
+
+```bash
+termux-setup-storage
+pkg update && pkg upgrade
+```
+
+### OpenSSH Server
+
+Start an SSH server on a custom port inside Termux for remote access from a desktop terminal.
+
+```bash
+pkg install openssh
+sshd -p 8022
+```
+
+Verify connectivity from the host machine using `ssh user@device_ip -p 8022`.

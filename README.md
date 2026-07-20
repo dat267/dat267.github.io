@@ -1,3 +1,7 @@
+---
+title: README
+---
+
 ## dat267.github.io
 
 <https://dat267.github.io>
@@ -66,4 +70,4 @@ The custom configuration in `.obsidian/app.json` will automatically:
 
 * Hide all build files, dependency folders, and configuration scripts from the file explorer, letting you focus entirely on your content under `src/content/docs/`.
 * Enable relative Markdown links to maintain compatibility with the Starlight compiler.
-* Redirect dropped/pasted images and attachments to the `/public` folder automatically.
+* Redirect dropped/pasted images and attachments to `src/content/docs/attachments/` automatically.

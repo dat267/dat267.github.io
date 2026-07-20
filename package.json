@@ -7,13 +7,14 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "format:check": "prettier --check \"src/**/*.{md,css,ts}\" \"astro.config.mjs\""
+    "format:check": "prettier --check \"src/**/*.{md,css,ts}\" \"astro.config.mjs\"",
+    "format:fix": "prettier --write \"src/**/*.{md,css,ts}\" \"astro.config.mjs\""
   },
   "dependencies": {
-    "@astrojs/starlight": "*",
-    "astro": "*"
+    "@astrojs/starlight": "^0.39.2",
+    "astro": "^6.4.8"
   },
   "devDependencies": {
-    "prettier": "*"
+    "prettier": "^3.8.4"
   }
 }
