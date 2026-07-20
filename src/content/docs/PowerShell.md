@@ -1,6 +1,6 @@
 ---
 title: PowerShell
-description: PowerShell scripts for remote execution, system administration, task persistence, and session management on Windows.
+description: PowerShell scripts for remote execution, system administration, task persistence, multithreaded runspaces, proxy commands, and ETW event forensics on Windows.
 icon: seti:powershell
 ---
 
@@ -35,7 +35,17 @@ Automate environment persistence, session maintenance, and invisible payloads un
 Launches a hidden background PowerShell instance that directly blocks system sleep and display timeouts using native Windows API calls.
 
 ```powershell
-& { param([double]$For=16.5) conhost --headless powershell -c "`$a=Add-Type -M '[DllImport(`"kernel32.dll`")]public static extern uint SetThreadExecutionState(uint f);' -Name S -Namespace W -PassThru;`$e=(date).AddHours($For).AddMinutes((Get-Random -Min -5 -Max 5));while((date) -lt `$e){`$a::SetThreadExecutionState(0x80000003);sleep 60}" } 10.5
+$code = @'
+param([double]$For)
+$a = Add-Type -MemberDefinition '[DllImport("kernel32.dll")]public static extern uint SetThreadExecutionState(uint f);' -Name S -Namespace W -PassThru
+$end = (Get-Date).AddHours($For).AddMinutes((Get-Random -Min -5 -Max 5))
+while ((Get-Date) -lt $end) {
+    $a::SetThreadExecutionState(0x80000003)
+    Start-Sleep -Seconds 60
+}
+'@
+$encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($code))
+Start-Process powershell -WindowStyle Hidden -ArgumentList "-NoProfile -EncodedCommand $encoded 10.5"
 ```
 
 #### Option 2
@@ -43,7 +53,17 @@ Launches a hidden background PowerShell instance that directly blocks system sle
 Launches a hidden background PowerShell instance that simulates subtle key presses at randomized intervals to prevent screensaver locks or session disconnects.
 
 ```powershell
-& { param([double]$For=16.5) conhost --headless powershell -c "`$w=New-Object -Com wscript.shell;`$e=(date).AddHours($For).AddMinutes((Get-Random -Min -5 -Max 5));while((date) -lt `$e){`$w.SendKeys('{F15}');sleep (Get-Random -Min 33 -Max 183)}" } 10.5
+$code = @'
+param([double]$For)
+$w = New-Object -ComObject wscript.shell
+$end = (Get-Date).AddHours($For).AddMinutes((Get-Random -Min -5 -Max 5))
+while ((Get-Date) -lt $end) {
+    $w.SendKeys('{F15}')
+    Start-Sleep -Seconds (Get-Random -Min 33 -Max 183)
+}
+'@
+$encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($code))
+Start-Process powershell -WindowStyle Hidden -ArgumentList "-NoProfile -EncodedCommand $encoded 10.5"
 ```
 
 ### Register Logon Task (Non-Admin Persistence)
@@ -141,3 +161,101 @@ try {
     }
 }
 ```
+
+## Multithreading with Runspace Pools
+
+### Parallel Worker Pool
+
+Run code in parallel across multiple threads with shared state, unlike `Start-Job` (heavyweight) or PowerShell 7 `-Parallel` (variable scoping limitations). Uses a synchronized hash table for thread-safe result collection.
+
+```powershell
+$results = [Hashtable]::Synchronized(@{ Items = @() })
+$runspacePool = [RunspaceFactory]::CreateRunspacePool(1, 8)
+$runspacePool.Open()
+$handles = 1..20 | ForEach-Object -Parallel {
+    $i = $_
+    $ps = [PowerShell]::Create()
+    $ps.RunspacePool = $using:runspacePool
+    $null = $ps.AddScript({
+        param($id, $out)
+        Start-Sleep -Seconds (Get-Random -Min 1 -Max 3)
+        $out.Items += "Processed item $id at $(Get-Date -Format 'HH:mm:ss')"
+    }).AddArgument($i).AddArgument($using:results)
+    [PSCustomObject]@{ Instance = $ps; Async = $ps.BeginInvoke() }
+} -ThrottleLimit 1
+
+$handles | ForEach-Object { $null = $_.Instance.EndInvoke($_.Async); $_.Instance.Dispose() }
+$runspacePool.Close()
+$runspacePool.Dispose()
+$results.Items
+```
+
+The pool limits concurrency (here min 1, max 8). Each script instance runs in the pool and writes to the synchronized hash table, avoiding race conditions without explicit locking.
+
+## Proxy Commands
+
+### Wrap a Cmdlet to Inject Defaults
+
+Create a proxy (wrapper) around any existing cmdlet to override default parameter values or transform output, without modifying the original command. The proxy supports tab completion, pipeline input, and `-Verbose` on the inner command.
+
+```powershell
+$metadata = [System.Management.Automation.CommandMetaData](Get-Command Select-Object)
+$proxy = [System.Management.Automation.ProxyCommand]::Create($metadata)
+$proxy = $proxy -replace "'[^']*'", "'-First 10 -Unique'"
+
+$params = @{
+    Name        = 'Select-Object'
+    Value       = $proxy
+    Option      = 'Local'
+    Force       = $true
+}
+Set-Item @params
+```
+
+To override parameters individually instead of rewriting the proxy string, access `$metadata.Parameters` before calling `Create()` and set `.Attributes` on specific parameters to inject default values or make them mandatory.
+
+## Event Log Forensics with ETW
+
+### Extract Process Creation Events
+
+Query the security event log for process creation events (Event ID 4688) using XPath filtering. Reveals command lines, parent PIDs, and the user who launched each process without external tools.
+
+```powershell
+$xpath = @'
+*[System[(EventID=4688)]] and
+*[EventData[Data[@Name="CommandLine"] and (Data!="")]]
+'@ -replace '\s+', ' '
+
+Get-WinEvent -LogName Security -FilterXPath $xpath -MaxEvents 50 -Oldest |
+    Select-Object TimeCreated,
+        @{n='User';e={$_.Properties[1].Value}},
+        @{n='PID';e={$_.Properties[4].Value}},
+        @{n='ParentPID';e={$_.Properties[6].Value}},
+        @{n='Process';e={$_.Properties[5].Value}},
+        @{n='CommandLine';e={$_.Properties[10].Value}} |
+    Format-Table -AutoSize
+```
+
+### Monitor Network Connections
+
+Query the Sysmon operational log for network connection events (Event ID 3), showing source and destination IPs, ports, and process IDs.
+
+```powershell
+$xpath = @'
+*[System[(EventID=3)]] and
+*[EventData[Data[@Name="DestinationIp"] and (Data!="-")]]
+'@ -replace '\s+', ' '
+
+Get-WinEvent -LogName 'Microsoft-Windows-Sysmon/Operational' -FilterXPath $xpath -MaxEvents 50 -Oldest |
+    Select-Object TimeCreated,
+        @{n='Process';e={$_.Properties[0].Value}},
+        @{n='PID';e={$_.Properties[3].Value}},
+        @{n='SrcIP';e={$_.Properties[4].Value}},
+        @{n='SrcPort';e={$_.Properties[5].Value}},
+        @{n='DestIP';e={$_.Properties[6].Value}},
+        @{n='DestPort';e={$_.Properties[7].Value}},
+        @{n='Proto';e={$_.Properties[9].Value}} |
+    Format-Table -AutoSize
+```
+
+For systems without Sysmon, the built-in `Security` log with Event ID 5156 (Windows Firewall allowed connection) provides a similar, though less detailed, view.
