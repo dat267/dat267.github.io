@@ -3,7 +3,7 @@ import { getCollection, render } from "astro:content";
 
 const docs = await getCollection("docs");
 const filteredPages = docs.filter(
-  (page) => page.id !== "index" && page.id !== "",
+  (page) => !["index", "404", ""].includes(page.id),
 );
 
 const pages = await Promise.all(
