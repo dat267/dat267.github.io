@@ -48,7 +48,7 @@ Launches a hidden background PowerShell instance that simulates subtle key press
 
 ### Register Logon Task (Non-Admin Persistence)
 
-Registers a persistent scheduled task triggered on user logon without requiring local administrative rights by leveraging the Schedule.Service COM interface. The entire payload is base64-encoded and executed headless.
+Registers a persistent scheduled task triggered on user logon without requiring local administrative rights by leveraging the Schedule.Service COM interface. The payload is base64-encoded and executed with `-WindowStyle Hidden` to avoid a visible console window.
 
 ```powershell
 & {
@@ -69,7 +69,6 @@ try {
 }
 "@
     $EncodedPayload = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($WrappedScript))
-    $TaskArgs = "--headless powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand $EncodedPayload"
     $Scheduler = New-Object -ComObject Schedule.Service
     $Scheduler.Connect()
     $Task = $Scheduler.NewTask(0)
@@ -77,12 +76,11 @@ try {
     $Task.Settings.DisallowStartIfOnBatteries = $false
     $Task.Settings.StopIfGoingOnBatteries = $false
     $Task.Triggers.Create(9).UserId = $User
-    $Principal = $Task.Principal
-    $Principal.UserId = $User
-    $Principal.LogonType = 3
+    $Task.Principal.UserId = $User
+    $Task.Principal.LogonType = 3
     $Action = $Task.Actions.Create(0)
-    $Action.Path = "conhost.exe"
-    $Action.Arguments = $TaskArgs
+    $Action.Path = "powershell.exe"
+    $Action.Arguments = "-WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand $EncodedPayload"
     $Scheduler.GetFolder("\").RegisterTaskDefinition($TaskName, $Task, 6, $null, $null, 3) | Out-Null
     Write-Host "Task registered for $User. Log: %TEMP%\$TaskName.log" -ForegroundColor Cyan
 }
@@ -120,7 +118,10 @@ try {
         $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
         Register-ScheduledTask -TaskName $Guid -Action $Action -Principal $Principal -Settings $Settings -Force | Out-Null
         Start-ScheduledTask -TaskName $Guid
-        while ((Get-ScheduledTask -TaskName $Guid).State -in 'Running', 'Queued') { Start-Sleep -Seconds 1 }
+        $deadline = (Get-Date).AddMinutes(5)
+        while ((Get-ScheduledTask -TaskName $Guid).State -in 'Running', 'Queued' -and (Get-Date) -lt $deadline) {
+            Start-Sleep -Seconds 1
+        }
         $TaskResult = (Get-ScheduledTaskInfo -TaskName $Guid).LastTaskResult
         Write-Host "Task Exit Code: $TaskResult" -ForegroundColor Yellow
     }
