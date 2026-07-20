@@ -6,6 +6,14 @@ icon: seti:go
 
 ## Binary Optimization
 
+### Strip Debug Symbols
+
+Strip DWARF tables and symbol tables to reduce binary size by up to 30%, combined with `-w` (DWARF) and `-s` (symbol table).
+
+```bash
+go build -ldflags="-s -w" -o app main.go
+```
+
 ### Inject Version Metadata
 
 Dynamically inject version and build-time variables into string fields defined in the main package during build time.
