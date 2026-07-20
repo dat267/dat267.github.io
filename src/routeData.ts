@@ -28,7 +28,7 @@ export const onRequest = defineRouteMiddleware((context) => {
           (d) => normalize(d) === normalize(entry.label),
         );
         if (matchedDir) {
-          entry.label = matchedDir;
+          entry.label = matchedDir.charAt(0).toUpperCase() + matchedDir.slice(1);
         }
         if (entry.entries) {
           updateLabels(entry.entries);
