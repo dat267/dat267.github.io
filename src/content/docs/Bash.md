@@ -20,60 +20,41 @@ find . -type f -name "*.wav" -exec sh -c '
 ' _ {} \;
 ```
 
-## Error Handling
+## Process Locking
 
-### Cleanup on Exit
+### File Descriptor-Based Lock
 
-Run cleanup logic regardless of how the script terminates (success, error, or interrupt). This pattern using `trap` with `EXIT` ensures temporary files are always removed.
-
-```sh
-tmpdir=$(mktemp -d)
-trap 'rm -rf "$tmpdir"' EXIT
-
-# script body operating on "$tmpdir" ...
-```
-
-### Strict Mode
-
-Enable strict error handling at the top of a script to fail fast on undefined variables, pipeline failures, and non-zero exit codes.
+Acquire an exclusive lock using a file descriptor so the lock is automatically released when the script exits or the FD is closed, even without a separate cleanup step.
 
 ```sh
-set -euo pipefail
+exec 3>/var/lock/myapp.lock
+flock -n 3 || { echo "already running" >&2; exit 1; }
 ```
 
-## JSON Processing
+The lock file persists on disk but the kernel releases the lock when the process holding FD 3 terminates.
 
-### Filter and Transform with jq
+## Indirect Variable Expansion
 
-Extract specific fields from a JSON array and reformat them into a new structure, such as building a key-value mapping.
+### Dynamic Variable Names
+
+Read a variable whose name is stored in another variable, such as iterating over a list of configuration keys where each key names a variable.
 
 ```sh
-curl -s https://api.example.com/users | jq -r '.[] | {name: .name, email: .email} | "\(.name): \(.email)"'
+key=user_1
+ref="user_1"
+echo "${!ref}"
 ```
 
-## Parallel Execution
+Pairs naturally with `for key in list; do val="${!key}"; ...` to avoid eval.
 
-### Batch Jobs with xargs
+## Simultaneous Processing
 
-Process a list of URLs or files in parallel, limiting concurrency to 4 workers. Each line of input is passed as an argument to the command.
+### Tee Process Substitution
+
+Send a pipeline's output to both a file and a downstream command at the same time, useful for compressing a stream while also computing a checksum.
 
 ```sh
-< urls.txt xargs -P 4 -I {} curl -s -o /dev/null -w "%{http_code} {}\n" {}
+some_large_command | tee >(sha256sum > checksum.txt) | gzip > output.gz
 ```
 
-## Argument Parsing
-
-### POSIX getopts
-
-Parse short flags and options in a portable way using `getopts`. This pattern supports flags with and without arguments, and provides automatic error messages for invalid flags.
-
-```sh
-while getopts "o:f" opt; do
-  case "$opt" in
-    o) output="$OPTARG" ;;
-    f) force=1 ;;
-    *) exit 1 ;;
-  esac
-done
-shift $((OPTIND - 1))
-```
+The `>(...)` process substitution runs in the background while `tee` feeds both targets concurrently.

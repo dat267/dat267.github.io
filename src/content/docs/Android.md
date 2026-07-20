@@ -1,12 +1,10 @@
 ---
 title: Android
-description: Media player configuration, ADB utilities, Termux setup, and system tweaks for Android devices.
+description: Media player configuration, ADB utilities, and system debugging for Android devices.
 icon: seti:android
 ---
 
 ## MPV Media Player
-
-Optimize the performance and gesture controls of the mpv-android media player using custom configuration files.
 
 ### mpv.conf
 
@@ -48,51 +46,42 @@ s cycle sub
 
 ## ADB Debug Bridge
 
-### Screen Recording
+### Extract and Decompile an Installed APK
 
-Record the device screen at 2 Mbps, limiting the capture to 30 seconds, then pull the video to the host.
-
-```bash
-adb shell screenrecord /sdcard/screen.mp4 --bit-rate 2M --time-limit 30
-adb pull /sdcard/screen.mp4
-```
-
-### Wireless Debugging
-
-Connect over TCP/IP after enabling wireless debugging on the device under Developer options.
+Pull an APK from a running device and decompile it to Java/smali source, useful for inspecting third-party resource layouts or understanding how an app implements a specific feature.
 
 ```bash
-adb pair 192.168.1.100:41339
-adb connect 192.168.1.100:39835
-scrcpy
+adb shell pm path com.example.app | cut -d: -f2 | xargs -I {} adb pull {} ./app.apk
+apktool d app.apk -o app-source
 ```
+
+### Frame Timing Report
+
+Generate a detailed frame-timing histogram for a specific activity to identify jank in UI rendering.
+
+```bash
+adb shell dumpsys gfxinfo com.example.app framestats | grep "PROFILE_DATA" | \
+  awk 'NR>1{for(i=13;i<=16;i++)$i="";print}' > frametimes.csv
+```
+
+The output CSV contains per-frame draw, prepare, and process durations in nanoseconds.
 
 ### Focused Logcat
 
-Filter logcat output by PID and priority level to isolate a specific application's logs.
+Filter logcat output by PID and priority level to isolate a specific application's logs without noise from other processes.
 
 ```bash
 adb logcat --pid=$(adb shell pidof -s com.example.app) -v brief *:E
 ```
 
-## Termux
+## Debugging
 
-### Basic Setup
+### Capture a Bugreport
 
-Grant storage access and update the package repositories in a fresh Termux installation.
-
-```bash
-termux-setup-storage
-pkg update && pkg upgrade
-```
-
-### OpenSSH Server
-
-Start an SSH server on a custom port inside Termux for remote access from a desktop terminal.
+Dump a comprehensive device state snapshot including logs, stack traces, kernel messages, and network info into a single ZIP for offline analysis.
 
 ```bash
-pkg install openssh
-sshd -p 8022
+adb bugreport ./bugreport.zip
 ```
 
-Verify connectivity from the host machine using `ssh user@device_ip -p 8022`.
+This captures the output of hundreds of `dumpsys` services at once, useful for diagnosing battery drain, ANRs, and system-level crashes.

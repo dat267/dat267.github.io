@@ -1,20 +1,10 @@
 ---
 title: Go
-description: Go build configurations, compilation optimization flags, linker techniques, and concurrency patterns.
+description: Go build configurations, linker techniques, code generation, and concurrency patterns.
 icon: seti:go
 ---
 
 ## Binary Optimization
-
-Strip debugging symbols and build-time information to produce the smallest possible statically linked binaries.
-
-### Strip Symbols with Ldflags
-
-Compile the package using linker options to strip DWARF tables and symbol tables, reducing binary size by up to 30%.
-
-```bash
-go build -ldflags="-s -w" -o app main.go
-```
 
 ### Inject Version Metadata
 
@@ -24,17 +14,47 @@ Dynamically inject version and build-time variables into string fields defined i
 go build -ldflags="-X main.Version=1.0.0 -X main.BuildTime=$(date +%Y-%m-%dT%H:%M:%S)" -o app main.go
 ```
 
-## Compilation and Workspace Maintenance
+## Code Generation
 
-Manage build cache size and resolve dependency path conflicts.
+### Generate with go:generate
 
-### Prune Cache
+Automate boilerplate generation by embedding `go:generate` directives directly in source files. Run them all with a single `go generate ./...` invocation.
 
-Clean out all cached build artifacts, cached dependencies, and test results to free up disk space.
+```go
+//go:generate stringer -type=Status -linecomment
+//go:generate mockgen -source=store.go -destination=mock_store.go -package=main
 
-```bash
-go clean -cache -testcache -modcache
+type Status int
+
+const (
+	Active Status = iota + 1
+	Inactive
+	Archived
+)
 ```
+
+The `stringer` tool auto-creates `String()` methods for enums. The `mockgen` tool from `go.uber.org/mock` generates interface mocks. Install them with `go install golang.org/x/tools/cmd/stringer@latest` and `go install go.uber.org/mock/mockgen@latest`.
+
+### Embed Static Assets at Compile Time
+
+Embed files or directories directly into the binary at compile time using the `embed` package, eliminating runtime file dependencies.
+
+```go
+import (
+	"embed"
+	"net/http"
+)
+
+//go:embed static/*
+var staticFiles embed.FS
+
+func main() {
+	http.Handle("/", http.FileServer(http.FS(staticFiles)))
+	http.ListenAndServe(":8080", nil)
+}
+```
+
+The directive must appear as a `var` declaration immediately below the `//go:embed` comment. Patterns support single files, directories, and globs.
 
 ## Boilerplate Code
 
