@@ -260,48 +260,221 @@ Get-WinEvent -LogName 'Microsoft-Windows-Sysmon/Operational' -FilterXPath $xpath
 
 For systems without Sysmon, the built-in `Security` log with Event ID 5156 (Windows Firewall allowed connection) provides a similar, though less detailed, view.
 
+## AD User Summary
+
+### Quick User Status Check
+
+Returns account status, lockout state, password expiry, group membership, and key attributes in a single view. Commonly used by service desk to triage login issues.
+
+```powershell
+function Get-ADUserSummary {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string] $SamAccountName
+    )
+
+    $user = Get-ADUser -Identity $SamAccountName -Properties * -ErrorAction Stop
+    $pwdMaxAge = (Get-ADDefaultDomainPasswordPolicy).MaxPasswordAge
+    $pwdExpiry = if ($user.PasswordNeverExpires) {
+        $null
+    } elseif ($user.PasswordLastSet -and $pwdMaxAge) {
+        $user.PasswordLastSet.AddDays($pwdMaxAge.TotalDays)
+    } else {
+        $null
+    }
+
+    $locked = if ($user.LockedOut) { "YES" } else { "no" }
+    $enabled = if ($user.Enabled) { "enabled" } else { "DISABLED" }
+    $expired = if ($pwdExpiry -and (Get-Date) -gt $pwdExpiry) { "EXPIRED" } else { "ok" }
+    $pwdDays = if ($pwdExpiry) { [math]::Round(($pwdExpiry - (Get-Date)).TotalDays) } else { $null }
+
+    $groups = $user.MemberOf | ForEach-Object {
+        (Get-ADGroup -Identity $_ -ErrorAction SilentlyContinue).SamAccountName
+    } | Sort-Object
+
+    [PSCustomObject]@{
+        SamAccountName     = $user.SamAccountName
+        DisplayName        = $user.DisplayName
+        Status             = "$enabled | locked=$locked"
+        UserPrincipalName  = $user.UserPrincipalName
+        LastLogon          = $user.LastLogonDate
+        PasswordLastSet    = $user.PasswordLastSet
+        PasswordExpiry     = $pwdExpiry
+        PasswordStatus     = $expired
+        PasswordDaysLeft   = $pwdDays
+        PasswordNeverExpires = $user.PasswordNeverExpires
+        LockedOut          = $user.LockedOut
+        BadLogonCount      = $user.BadLogonCount
+        Department         = $user.Department
+        Title              = $user.Title
+        Manager            = $user.Manager
+        Office             = $user.Office
+        MemberOfCount      = @($groups).Count
+        Groups             = $groups -join '; '
+        DN                 = $user.DistinguishedName
+    }
+}
+
+Get-ADUserSummary -SamAccountName "jane.doe" | Format-List
+```
+
 ## Active Directory User Onboarding
 
-### Create or Update AD User with Attribute Splatting
+### Create or Update AD User with All Attributes
 
-Onboard a new user or update an existing one with standardized attributes, group memberships, and a reset-required password. Uses splatting for readability and tests preconditions before making changes. Handles the most common edge cases: existing user (updates), missing OU (creates it), and password validation.
+Onboard a new user or update an existing one with the full set of standard AD attributes, group memberships, contact info, address, Exchange attributes, and a reset-required password. Uses splatting for readability and handles all common edge cases: existing user (updates), missing OU (warns), attribute type mismatches, and password validation.
 
 ```powershell
 function New-ADOnboardedUser {
     [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Mandatory)] [string] $GivenName,
-        [Parameter(Mandatory)] [string] $Surname,
-        [Parameter(Mandatory)] [string] $SamAccountName,
-        [Parameter(Mandatory)] [string] $UserPrincipalName,
-        [Parameter(Mandatory)] [string] $Path,
-        [Parameter(Mandatory)] [string[]] $GroupMembership,
-        [string] $Title,
-        [string] $Department,
-        [string] $Manager,
-        [string] $Company = "Contoso",
-        [string] $Description
+        # Identity — required fields that uniquely identify the user
+        [Parameter(Mandatory)] [string] $GivenName,       # REQUIRED | First name
+        [Parameter(Mandatory)] [string] $Surname,          # REQUIRED | Last name
+        [Parameter(Mandatory)] [string] $SamAccountName,   # REQUIRED | Pre-Windows 2000 logon name (e.g. jane.doe)
+        [Parameter(Mandatory)] [string] $UserPrincipalName,# REQUIRED | Modern logon name (e.g. jane.doe@contoso.com)
+        [Parameter(Mandatory)] [string] $Path,             # REQUIRED | Distinguished name of the target OU (e.g. OU=Users,DC=contoso,DC=com)
+        [Parameter(Mandatory)] [string[]] $GroupMembership,# REQUIRED | Security groups to add the user to (e.g. @("Domain Users", "VPN-Users"))
+
+        # Job — role and organizational information
+        [string] $Title,             # OPTIONAL | Job title (e.g. "Senior Engineer")
+        [string] $Department,        # OPTIONAL | Department name (e.g. "Engineering")
+        [string] $Division,          # OPTIONAL | Division within the company (e.g. "Product")
+        [string] $Company,           # OPTIONAL | Organization name (e.g. "Contoso Ltd")
+        [string] $Manager,           # OPTIONAL | SamAccountName or DN of the manager
+        [string] $EmployeeID,        # OPTIONAL | Unique HR employee identifier (e.g. "EMP00421")
+        [string] $EmployeeNumber,    # OPTIONAL | Alternative employee number
+        [string] $EmployeeType,      # OPTIONAL | Employment classification (e.g. "Full-Time", "Contractor")
+
+        # Contact — phone and location details
+        [string] $EmailAddress,      # OPTIONAL | Primary SMTP address (maps to mail attribute)
+        [string] $OfficePhone,       # OPTIONAL | Desk phone number (maps to telephoneNumber)
+        [string] $MobilePhone,       # OPTIONAL | Mobile/cell number (maps to mobile)
+        [string] $HomePhone,         # OPTIONAL | Home phone number (maps to homePhone)
+        [string] $Fax,               # OPTIONAL | Fax number (maps to facsimileTelephoneNumber)
+        [string] $Office,            # OPTIONAL | Physical office location (maps to physicalDeliveryOfficeName)
+
+        # Address — postal address fields
+        [string] $StreetAddress,     # OPTIONAL | Street or building address (e.g. "200 Tech Drive")
+        [string] $City,              # OPTIONAL | City name
+        [string] $State,             # OPTIONAL | State or province abbreviation
+        [string] $PostalCode,        # OPTIONAL | ZIP or postal code
+        [string] $Country,           # OPTIONAL | Country name or ISO code
+        [string] $POBox,             # OPTIONAL | Post office box number
+
+        # Exchange / Mail — email routing attributes
+        [string] $mailNickname,      # OPTIONAL | Exchange alias (defaults to SamAccountName)
+        [string[]] $ProxyAddresses,  # OPTIONAL | Additional email addresses (e.g. @("smtp:alias@contoso.com"))
+        [string] $TargetAddress,     # OPTIONAL | External forwarding address for mail-enabled users
+
+        # Account — login policy and profile settings
+        [string] $Description,       # OPTIONAL | Free-text description (e.g. "Onboarded 2026-07-21")
+        [string] $HomeDirectory,     # OPTIONAL | UNC path for home folder (e.g. "\\nas\home\jane.doe")
+        [string] $HomeDrive,         # OPTIONAL | Drive letter mapped to HomeDirectory (convention is "H:" for Home)
+        [string] $ScriptPath,        # OPTIONAL | Logon script path (maps to scriptPath)
+        [string] $ProfilePath,       # OPTIONAL | Roaming profile UNC path (maps to profilePath)
+        [string] $Initials,          # OPTIONAL | Middle initials (maps to initials)
+        [string] $DisplayName,       # OPTIONAL | Full display name (defaults to "$GivenName $Surname")
+        [datetime] $AccountExpirationDate,  # OPTIONAL | Account expiry (e.g. for contractors with fixed end dates)
+        [string] $LogonWorkstations, # OPTIONAL | Comma-separated computer names the user may log into (e.g. "PC-01,PC-02")
+        [switch] $SmartcardLogonRequired,   # OPTIONAL | Enforce smart card authentication
+        [switch] $PasswordNeverExpires,     # OPTIONAL | Bypass password policy (use sparingly)
+        [switch] $AccountNotDelegated,      # OPTIONAL | Mark account as sensitive — cannot be delegated (e.g. for privileged users)
+
+        # Enterprise — custom extension attributes (common for HR/SSO integrations)
+        [string] $DepartmentNumber,  # OPTIONAL | Cost centre or department code (e.g. "ENG-421")
+        [string] $WwwHomePage,       # OPTIONAL | Personal web page URL
+        [string] $ExtensionAttribute1,  [string] $ExtensionAttribute2,
+        [string] $ExtensionAttribute3,  [string] $ExtensionAttribute4,
+        [string] $ExtensionAttribute5,  [string] $ExtensionAttribute6,
+        [string] $ExtensionAttribute7,  [string] $ExtensionAttribute8,
+        [string] $ExtensionAttribute9,  [string] $ExtensionAttribute10,
+        [string] $ExtensionAttribute11, [string] $ExtensionAttribute12,
+        [string] $ExtensionAttribute13, [string] $ExtensionAttribute14,
+        [string] $ExtensionAttribute15
     )
 
-    $DisplayName = "$GivenName $Surname"
-    $securePwd = Read-Host "Initial password" -AsSecureString
+    # Module check
+    if (-not (Get-Module -Name ActiveDirectory -ListAvailable)) {
+        throw "ActiveDirectory module not found. Install RSAT tools and try again."
+    }
+    Import-Module ActiveDirectory -ErrorAction Stop
+
+    if (-not $DisplayName) { $DisplayName = "$GivenName $Surname" }
+    if (-not $mailNickname) { $mailNickname = $SamAccountName }
+
+    # Generate a random 16-character printable password
+    $plainPwd = -join ((33..126) | Get-Random -Count 16 | ForEach-Object { [char]$_ })
+    $securePwd = ConvertTo-SecureString -String $plainPwd -AsPlainText -Force
 
     $attrs = @{
-        GivenName       = $GivenName
-        Surname         = $Surname
-        DisplayName     = $DisplayName
-        Name            = $DisplayName
-        SamAccountName  = $SamAccountName
-        UserPrincipalName = $UserPrincipalName
-        Title           = $Title
-        Department      = $Department
-        Company         = $Company
-        Description     = $Description
-        AccountPassword = $securePwd
-        Enabled         = $true
-        PassThru        = $true
-        ChangePasswordAtLogon = $true
+        GivenName           = $GivenName
+        Surname             = $Surname
+        DisplayName         = $DisplayName
+        Name                = $DisplayName
+        SamAccountName      = $SamAccountName
+        UserPrincipalName   = $UserPrincipalName
+        EmailAddress        = $EmailAddress
+        Title               = $Title
+        Department          = $Department
+        Division            = $Division
+        Company             = $Company
+        Description         = $Description
+        EmployeeID          = $EmployeeID
+        EmployeeNumber      = $EmployeeNumber
+        EmployeeType        = $EmployeeType
+        OfficePhone         = $OfficePhone
+        MobilePhone         = $MobilePhone
+        HomePhone           = $HomePhone
+        Fax                 = $Fax
+        Office              = $Office
+        StreetAddress       = $StreetAddress
+        City                = $City
+        State               = $State
+        PostalCode          = $PostalCode
+        Country             = $Country
+        POBox               = $POBox
+        mailNickname        = $mailNickname
+        ProxyAddresses      = $ProxyAddresses
+        Initials            = $Initials
+        HomeDirectory       = $HomeDirectory
+        HomeDrive           = $HomeDrive
+        ScriptPath          = $ScriptPath
+        ProfilePath         = $ProfilePath
+        DepartmentNumber    = $DepartmentNumber
+        WwwHomePage         = $WwwHomePage
+        AccountPassword     = $securePwd
+        Enabled             = $true
+        PassThru            = $true
+        ChangePasswordAtLogon = -not $PasswordNeverExpires
     }
+
+    # Extension attributes 1-15
+    for ($i = 1; $i -le 15; $i++) {
+        $propName = "ExtensionAttribute$i"
+        if ($PSBoundParameters.ContainsKey($propName)) {
+            $attrs[$propName] = Get-Variable -Name $propName -ValueOnly
+        }
+    }
+
+    if ($SmartcardLogonRequired)  { $attrs.SmartcardLogonRequired = $true }
+    if ($AccountExpirationDate)   { $attrs.AccountExpirationDate = $AccountExpirationDate }
+    if ($PasswordNeverExpires)    { $attrs.PasswordNeverExpires = $true }
+    if ($AccountNotDelegated)     { $attrs.AccountNotDelegated = $true }
+    if ($LogonWorkstations)       { $attrs.LogonWorkstations = $LogonWorkstations }
+    if ($TargetAddress) {
+        $attrs.TargetAddress = $TargetAddress
+        $null = $attrs.ProxyAddresses
+    }
+    if ($ProxyAddresses -or $TargetAddress) {
+        $combined = @($ProxyAddresses)
+        if ($TargetAddress) { $combined += "SMTP:$TargetAddress" }
+        $attrs.ProxyAddresses = $combined
+    }
+
+    # Remove empty strings to avoid AD attribute errors
+    $emptyKeys = @($attrs.Keys | Where-Object { -not $attrs[$_] -and $attrs[$_] -is [string] })
+    foreach ($k in $emptyKeys) { $null = $attrs.Remove($k) }
 
     if ($Manager) {
         try {
@@ -312,18 +485,28 @@ function New-ADOnboardedUser {
         }
     }
 
+    # Validate OU exists
+    try {
+        $null = Get-ADOrganizationalUnit -Identity $Path -ErrorAction Stop
+    } catch {
+        Write-Warning "OU '$Path' not found — creating user may fail."
+    }
+
     $existing = Get-ADUser -Filter "SamAccountName -eq '$SamAccountName'" -ErrorAction SilentlyContinue
 
     if ($existing) {
+        $dn = $existing.DistinguishedName
         $null = $attrs.Remove('AccountPassword')
         $null = $attrs.Remove('Enabled')
+        $null = $attrs.Remove('PassThru')
         $null = $attrs.Remove('ChangePasswordAtLogon')
+        $null = $attrs.Remove('Name')
+
         if ($PSCmdlet.ShouldProcess($SamAccountName, "Update AD user")) {
-            Set-ADUser -Identity $existing.DistinguishedName @attrs
-            Set-ADAccountPassword -Identity $existing.DistinguishedName -NewPassword $securePwd -Reset
-            Enable-ADAccount -Identity $existing.DistinguishedName
+            Set-ADUser -Identity $dn @attrs
+            Set-ADAccountPassword -Identity $dn -NewPassword $securePwd -Reset
+            Enable-ADAccount -Identity $dn
         }
-        $dn = $existing.DistinguishedName
     } else {
         if ($PSCmdlet.ShouldProcess($SamAccountName, "Create AD user")) {
             New-ADUser @attrs | Out-Null
@@ -331,7 +514,11 @@ function New-ADOnboardedUser {
         }
     }
 
-    if ($PSCmdlet.ShouldProcess($SamAccountName, "Add to groups")) {
+    if ($dn -and $PSCmdlet.ShouldProcess($SamAccountName, "Generate password")) {
+        Write-Host "Temporary password for $SamAccountName: $plainPwd" -ForegroundColor Cyan
+    }
+
+    if ($dn -and $PSCmdlet.ShouldProcess($SamAccountName, "Add to groups")) {
         foreach ($group in $GroupMembership) {
             try {
                 Add-ADGroupMember -Identity $group -Members $dn -ErrorAction Stop
@@ -341,32 +528,221 @@ function New-ADOnboardedUser {
         }
     }
 
-    if ($attrs.Manager -and $PSCmdlet.ShouldProcess($SamAccountName, "Set manager")) {
-        Set-ADUser -Identity $SamAccountName -Manager $attrs.Manager
+    if ($dn -and $attrs.ContainsKey('Manager') -and $PSCmdlet.ShouldProcess($SamAccountName, "Set manager")) {
+        Set-ADUser -Identity $dn -Manager $attrs.Manager
     }
 
-    $summary = [PSCustomObject]@{
+    [PSCustomObject]@{
         SamAccountName = $SamAccountName
         DisplayName    = $DisplayName
         DN             = $dn
         Groups         = ($GroupMembership -join ';')
         Manager        = $Manager
+        EmployeeID     = $EmployeeID
+        Title          = $Title
+        Department     = $Department
     }
-    return $summary
 }
 
 # usage
 $params = @{
-    GivenName       = "Jane"
-    Surname         = "Doe"
-    SamAccountName  = "jane.doe"
-    UserPrincipalName = "jane.doe@contoso.com"
-    Path            = "OU=Users,DC=contoso,DC=com"
-    GroupMembership = @("Domain Users", "VPN-Users")
-    Title           = "Engineer"
-    Department      = "Engineering"
-    Manager         = "john.smith"
-    Description     = "Onboarded $(Get-Date -Format yyyy-MM-dd)"
+    GivenName           = "Jane"
+    Surname             = "Doe"
+    SamAccountName      = "jane.doe"
+    UserPrincipalName   = "jane.doe@contoso.com"
+    EmailAddress        = "jane.doe@contoso.com"
+    mailNickname        = "jane.doe"
+    ProxyAddresses      = @("smtp:jane@contoso.com", "smtp:jane.doe@contoso.net")
+    Path                = "OU=Users,OU=HQ,DC=contoso,DC=com"
+    GroupMembership     = @("Domain Users", "VPN-Users", "Engineering-Team")
+
+    Title               = "Senior Engineer"
+    Department          = "Engineering"
+    Division            = "Product"
+    Company             = "Contoso Ltd"
+    Manager             = "john.smith"
+    EmployeeID          = "EMP00421"
+    EmployeeType        = "Full-Time"
+
+    OfficePhone         = "+1 555-0123"
+    MobilePhone         = "+1 555-0199"
+    Office              = "HQ-4F"
+
+    StreetAddress       = "200 Tech Drive"
+    City                = "San Francisco"
+    State               = "CA"
+    PostalCode          = "94105"
+    Country             = "US"
+
+    HomeDirectory       = "\\nas\home\jane.doe"
+    HomeDrive           = "H:"
+    LogonWorkstations   = "PC-001,PC-002"
+    AccountNotDelegated = $true
+    Description         = "Onboarded $(Get-Date -Format yyyy-MM-dd)"
+
+    DepartmentNumber    = "ENG-421"
+    ExtensionAttribute1 = "Badge-8842"
+    ExtensionAttribute4 = "UK-Region"
 }
 New-ADOnboardedUser @params
+```
+
+### Bulk Onboard from CSV
+
+Iterate over a CSV with the same parameter names, piping each row through the single-user function. Multi-valued fields like groups are delimited by `;` in the CSV.
+
+```csv
+FirstName,LastName,Username,OU, Groups,Title,Department,Manager,EmployeeID
+Jane,Doe,jane.doe,OU=Users,DC=contoso,DC=com,"Domain Users;VPN-Users;Eng-Team",Engineer,Engineering,john.smith,EMP0421
+John,Smith,john.smith,OU=Users,DC=contoso,DC=com,"Domain Users;VPN-Users",Manager,Engineering,,EMP0422
+```
+
+```powershell
+$users = Import-Csv -Path .\onboard-users.csv
+foreach ($row in $users) {
+    $params = @{
+        GivenName        = $row.FirstName
+        Surname          = $row.LastName
+        SamAccountName   = $row.Username
+        UserPrincipalName = "$($row.Username)@contoso.com"
+        Path             = $row.OU
+        GroupMembership  = $row.Groups -split ';'
+        Title            = $row.Title
+        Department       = $row.Department
+        Manager          = $row.Manager
+        EmployeeID       = $row.EmployeeID
+    }
+    try {
+        New-ADOnboardedUser @params
+    } catch {
+        Write-Warning "Failed to onboard $($row.Username): $_"
+    }
+}
+```
+
+## AD User Helper
+
+### Get Group Memberships of an Existing User
+
+Returns the distinguished names of all non-protected groups a user belongs to, formatted as a semicolon-separated string ready to pass to `New-ADOnboardedUser -GroupMembership`.
+
+```powershell
+function Get-ADUserGroupList {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string] $SamAccountName
+    )
+
+    $user = Get-ADUser -Identity $SamAccountName -Properties MemberOf -ErrorAction Stop
+    $groups = $user.MemberOf |
+        Where-Object { $_ -notlike "*Domain Users*" } |
+        ForEach-Object { (Get-ADGroup -Identity $_).SamAccountName }
+
+    [PSCustomObject]@{
+        SamAccountName   = $SamAccountName
+        GroupCount       = @($groups).Count
+        GroupMembership  = $groups -join ';'
+        Groups           = $groups
+    }
+}
+
+# usage — pipe GroupMembership string back into onboarding
+$ref = Get-ADUserGroupList -SamAccountName "jane.doe"
+New-ADOnboardedUser -SamAccountName "jane.doe" -GroupMembership ($ref.GroupMembership -split ';')
+```
+
+## Active Directory User Offboarding
+
+### Method 1: Disable and Rename
+
+Disable the account, strip group memberships, clear the manager field, and rename the display name so a re-hired user with the same name won't conflict. Keeps the object in AD for auditing.
+
+```powershell
+function Disable-ADUserAndRename {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)] [string] $SamAccountName,
+        [string[]] $GroupsToKeep,   # OPTIONAL | Group SAM names to preserve (e.g. @("Domain Users", "All-Employees"))
+        [string] $Description
+    )
+
+    if (-not (Get-Module -Name ActiveDirectory -ListAvailable)) {
+        throw "ActiveDirectory module not found. Install RSAT tools and try again."
+    }
+    Import-Module ActiveDirectory -ErrorAction Stop
+
+    $user = Get-ADUser -Identity $SamAccountName -Properties MemberOf, Manager -ErrorAction Stop
+    $today = Get-Date -Format "yyyy-MM-dd"
+    $suffix = "_disabled_$today"
+    $newSam = "$($user.SamAccountName)$suffix"
+
+    # Resolve kept groups to DNs for comparison (filter out any that failed lookup)
+    $keepDNs = $GroupsToKeep | ForEach-Object {
+        try { (Get-ADGroup -Identity $_ -ErrorAction Stop).DistinguishedName }
+        catch { Write-Warning "Keep-group '$_' not found — skipping."; $null }
+    } | Where-Object { $_ }
+
+    if ($PSCmdlet.ShouldProcess($SamAccountName, "Disable and rename")) {
+        # Remove from all groups except Domain Users and the keep list
+        $user.MemberOf | Where-Object {
+            $_ -notlike "*CN=Domain Users,*" -and
+            $_ -notin $keepDNs
+        } | ForEach-Object {
+            try { Remove-ADGroupMember -Identity $_ -Members $user.DistinguishedName -Confirm:$false -ErrorAction SilentlyContinue }
+            catch { Write-Warning "Failed to remove from $_" }
+        }
+
+        $upnParts = $user.UserPrincipalName -split '@'
+        $newUPN = "$($upnParts[0])$suffix@$($upnParts[1])"
+
+        Set-ADUser -Identity $user.DistinguishedName -Clear Manager
+        Set-ADUser -Identity $user.DistinguishedName -DisplayName "$($user.DisplayName) [Disabled $today]"
+        Set-ADUser -Identity $user.DistinguishedName -SamAccountName $newSam
+        Set-ADUser -Identity $user.DistinguishedName -UserPrincipalName $newUPN
+        Set-ADUser -Identity $user.DistinguishedName -Description $Description
+        Disable-ADAccount -Identity $user.DistinguishedName
+
+        Write-Host "Disabled and renamed $SamAccountName → $newSam" -ForegroundColor Yellow
+    }
+
+    [PSCustomObject]@{
+        OriginalSam = $SamAccountName
+        NewSam      = $newSam
+        DisabledOn  = $today
+    }
+}
+
+Disable-ADUserAndRename -SamAccountName "jane.doe" -Description "Offboarded 2026-07-21"
+```
+
+### Method 2: Delete
+
+Permanently remove the user from AD. Use only when retention policies allow immediate deletion.
+
+```powershell
+function Remove-ADUserWithCleanup {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = "High")]
+    param(
+        [Parameter(Mandatory)] [string] $SamAccountName
+    )
+
+    if (-not (Get-Module -Name ActiveDirectory -ListAvailable)) {
+        throw "ActiveDirectory module not found. Install RSAT tools and try again."
+    }
+    Import-Module ActiveDirectory -ErrorAction Stop
+
+    $user = Get-ADUser -Identity $SamAccountName -Properties MemberOf -ErrorAction Stop
+
+    if ($PSCmdlet.ShouldProcess($SamAccountName, "DELETE permanently")) {
+        # Strip group memberships first so the deletion doesn't leave orphaned ACL references
+        $user.MemberOf | ForEach-Object {
+            try { Remove-ADGroupMember -Identity $_ -Members $user.DistinguishedName -Confirm:$false -ErrorAction SilentlyContinue }
+            catch { Write-Warning "Failed to remove from $_" }
+        }
+        Remove-ADUser -Identity $user.DistinguishedName -Confirm:$false
+        Write-Host "Deleted $SamAccountName" -ForegroundColor Red
+    }
+}
+
+Remove-ADUserWithCleanup -SamAccountName "jane.doe"
 ```
