@@ -11,10 +11,10 @@
     "format:fix": "prettier --write \"src/**/*.{md,css,ts}\" \"astro.config.mjs\""
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.39.2",
-    "astro": "^6.4.8"
+    "@astrojs/starlight": "^0.41.3",
+    "astro": "^7.1.3"
   },
   "devDependencies": {
-    "prettier": "^3.8.4"
+    "prettier": "^3.9.6"
   }
 }

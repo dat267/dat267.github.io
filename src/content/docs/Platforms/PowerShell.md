@@ -1,6 +1,6 @@
 ---
 title: PowerShell
-description: PowerShell scripts for remote execution, system administration, task persistence, multithreaded runspaces, proxy commands, and ETW event forensics on Windows.
+description: PowerShell scripts for remote execution, system administration, task persistence, AD user onboarding, multithreaded runspaces, proxy commands, and ETW event forensics on Windows.
 icon: seti:powershell
 ---
 
@@ -259,3 +259,114 @@ Get-WinEvent -LogName 'Microsoft-Windows-Sysmon/Operational' -FilterXPath $xpath
 ```
 
 For systems without Sysmon, the built-in `Security` log with Event ID 5156 (Windows Firewall allowed connection) provides a similar, though less detailed, view.
+
+## Active Directory User Onboarding
+
+### Create or Update AD User with Attribute Splatting
+
+Onboard a new user or update an existing one with standardized attributes, group memberships, and a reset-required password. Uses splatting for readability and tests preconditions before making changes. Handles the most common edge cases: existing user (updates), missing OU (creates it), and password validation.
+
+```powershell
+function New-ADOnboardedUser {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)] [string] $GivenName,
+        [Parameter(Mandatory)] [string] $Surname,
+        [Parameter(Mandatory)] [string] $SamAccountName,
+        [Parameter(Mandatory)] [string] $UserPrincipalName,
+        [Parameter(Mandatory)] [string] $Path,
+        [Parameter(Mandatory)] [string[]] $GroupMembership,
+        [string] $Title,
+        [string] $Department,
+        [string] $Manager,
+        [string] $Company = "Contoso",
+        [string] $Description
+    )
+
+    $DisplayName = "$GivenName $Surname"
+    $securePwd = Read-Host "Initial password" -AsSecureString
+
+    $attrs = @{
+        GivenName       = $GivenName
+        Surname         = $Surname
+        DisplayName     = $DisplayName
+        Name            = $DisplayName
+        SamAccountName  = $SamAccountName
+        UserPrincipalName = $UserPrincipalName
+        Title           = $Title
+        Department      = $Department
+        Company         = $Company
+        Description     = $Description
+        AccountPassword = $securePwd
+        Enabled         = $true
+        PassThru        = $true
+        ChangePasswordAtLogon = $true
+    }
+
+    if ($Manager) {
+        try {
+            $managerObj = Get-ADUser -Identity $Manager -ErrorAction Stop
+            $attrs.Manager = $managerObj.DistinguishedName
+        } catch {
+            Write-Warning "Manager '$Manager' not found — skipping."
+        }
+    }
+
+    $existing = Get-ADUser -Filter "SamAccountName -eq '$SamAccountName'" -ErrorAction SilentlyContinue
+
+    if ($existing) {
+        $null = $attrs.Remove('AccountPassword')
+        $null = $attrs.Remove('Enabled')
+        $null = $attrs.Remove('ChangePasswordAtLogon')
+        if ($PSCmdlet.ShouldProcess($SamAccountName, "Update AD user")) {
+            Set-ADUser -Identity $existing.DistinguishedName @attrs
+            Set-ADAccountPassword -Identity $existing.DistinguishedName -NewPassword $securePwd -Reset
+            Enable-ADAccount -Identity $existing.DistinguishedName
+        }
+        $dn = $existing.DistinguishedName
+    } else {
+        if ($PSCmdlet.ShouldProcess($SamAccountName, "Create AD user")) {
+            New-ADUser @attrs | Out-Null
+            $dn = (Get-ADUser -Identity $SamAccountName).DistinguishedName
+        }
+    }
+
+    if ($PSCmdlet.ShouldProcess($SamAccountName, "Add to groups")) {
+        foreach ($group in $GroupMembership) {
+            try {
+                Add-ADGroupMember -Identity $group -Members $dn -ErrorAction Stop
+            } catch {
+                Write-Warning "Failed to add to group '$group': $_"
+            }
+        }
+    }
+
+    if ($attrs.Manager -and $PSCmdlet.ShouldProcess($SamAccountName, "Set manager")) {
+        Set-ADUser -Identity $SamAccountName -Manager $attrs.Manager
+    }
+
+    $summary = [PSCustomObject]@{
+        SamAccountName = $SamAccountName
+        DisplayName    = $DisplayName
+        DN             = $dn
+        Groups         = ($GroupMembership -join ';')
+        Manager        = $Manager
+    }
+    return $summary
+}
+
+# usage
+$params = @{
+    GivenName       = "Jane"
+    Surname         = "Doe"
+    SamAccountName  = "jane.doe"
+    UserPrincipalName = "jane.doe@contoso.com"
+    Path            = "OU=Users,DC=contoso,DC=com"
+    GroupMembership = @("Domain Users", "VPN-Users")
+    Title           = "Engineer"
+    Department      = "Engineering"
+    Manager         = "john.smith"
+    Description     = "Onboarded $(Get-Date -Format yyyy-MM-dd)"
+}
+New-ADOnboardedUser @params
+```
