@@ -1,5 +1,5 @@
 ---
-title: PowerShell
+title: Windows
 description: PowerShell scripts for remote execution, system administration, task persistence, AD user onboarding, multithreaded runspaces, proxy commands, and ETW event forensics on Windows.
 icon: seti:powershell
 ---
