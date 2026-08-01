@@ -1,0 +1,13 @@
+---
+title: cURL to Code
+description: Convert curl commands into HTTP request code for JavaScript, TypeScript, Go, Rust, Python, or PowerShell.
+icon: seti:shell
+---
+
+import CurlToCode from '../../../components/CurlToCode.astro';
+
+Paste a `curl` command below, pick a target language, and convert it into equivalent HTTP request code. The parser handles `-X`, `-H`, `-d`, and `-u`; `-k` and other unrecognized flags are accepted but ignored. It infers the method from `-d` when `-X` is absent and detects JSON versus form-encoded bodies. Everything runs in your browser; nothing is uploaded.
+
+<CurlToCode />
+
+JSON bodies are sent with a `Content-Type: application/json` header and passed through native JSON handling in JavaScript/TypeScript and Python; Go, Rust, and PowerShell embed the raw body string. `-u` credentials become an `Authorization: Basic` header. Multipart `-F` uploads are not supported yet and surface as warnings; other unrecognized flags are skipped gracefully.

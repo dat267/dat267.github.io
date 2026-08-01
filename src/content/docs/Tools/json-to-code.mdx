@@ -1,0 +1,13 @@
+---
+title: JSON to Code
+description: Generate typed model code from JSON samples for TypeScript, Go, Python, Rust, or JSON Schema.
+icon: seti:json
+---
+
+import JsonToCode from '../../../components/JsonToCode.astro';
+
+Paste a JSON sample below and pick a target language. The tool infers a type model from the sample — nested objects, arrays, and nullable fields included — and renders it as idiomatic code for the chosen target. Everything runs in your browser; nothing is uploaded.
+
+<JsonToCode />
+
+Field names from the JSON are used as-is in TypeScript and Python. Go converts field names to PascalCase, and Rust to snake_case with a `#[serde(rename)]` attribute when the name differs. Keys present in every object are marked required; keys seen in only some objects are optional.

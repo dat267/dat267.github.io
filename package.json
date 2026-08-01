@@ -8,7 +8,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "format:check": "prettier --check \"src/**/*.{md,css,ts}\" \"astro.config.mjs\"",
-    "format:fix": "prettier --write \"src/**/*.{md,css,ts}\" \"astro.config.mjs\""
+    "format:fix": "prettier --write \"src/**/*.{md,css,ts}\" \"astro.config.mjs\"",
+    "test:scripts": "node --test \"src/scripts/**/*.test.ts\""
   },
   "dependencies": {
     "@astrojs/starlight": "^0.41.3",
