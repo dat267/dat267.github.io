@@ -14,6 +14,7 @@ export default defineConfig({
         },
       ],
       lastUpdated: true,
+      customCss: ["./src/styles/webapps.css"],
     }),
   ],
 });
