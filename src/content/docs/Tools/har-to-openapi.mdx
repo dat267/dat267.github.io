@@ -1,0 +1,13 @@
+---
+title: HAR to OpenAPI
+description: Convert HTTP Archive (HAR) exports into an OpenAPI 3.0.3 spec in YAML, right in your browser.
+icon: seti:code-search
+---
+
+import HarToOpenApi from '../../../components/HarToOpenApi.astro';
+
+Paste a HAR export below and click Convert to generate an OpenAPI 3.0.3 spec in YAML. The tool infers request and response schemas from captured JSON bodies, templates concrete IDs like `/users/123` into `{id}` path parameters, merges repeated calls into single operations, and emits a `basicAuth` security scheme when requests carried `Authorization: Basic` headers. Everything runs in your browser; nothing is uploaded.
+
+<HarToOpenApi />
+
+Query parameters become `query` parameters, JSON request bodies become `requestBody` schemas, and each observed response status becomes a `responses` entry with its schema. Schema shapes are merged across repeated calls, and fields present in every object are marked required.

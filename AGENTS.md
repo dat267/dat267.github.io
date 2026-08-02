@@ -20,7 +20,7 @@ This project is a personal knowledge base and documentation site powered by [Ast
 - **Static Assets:** Public assets (like icons or scripts) are stored in the `public/` directory (e.g., `public/hello.ps1`, `public/favicon.svg`).
 - **Custom Components:** A `SiteToc.astro` component in `src/components/` renders the index page, dynamically listing all docs with their headings.
 - **Web App Styling:** The client-side web apps' shared styles live in `src/styles/webapps.css` (scoped under `.app`), registered via Starlight's `customCss` in `astro.config.mjs`.
-- **Client-Side Web Apps:** `Tools/json-to-code` and `Tools/curl-to-code` embed fully client-side code generators (`JsonToCode.astro`, `CurlToCode.astro`). Their engines live as pure TypeScript modules in `src/scripts/` and are tested with Node's built-in runner via `npm run test:scripts` (no external test framework).
+- **Client-Side Web Apps:** `Tools/json-to-code`, `Tools/curl-to-code`, and `Tools/har-to-openapi` embed fully client-side generators (`JsonToCode.astro`, `CurlToCode.astro`, `HarToOpenApi.astro`). Their engines live as pure TypeScript modules in `src/scripts/` and are tested with Node's built-in runner via `npm run test:scripts` (no external test framework).
 - **Route Middleware:** No longer used — directory names match sidebar labels directly (e.g., `Languages/`, `Tools/`, `Platforms/`).
 - **Configuration:** Project settings are defined in `astro.config.mjs` and `package.json`.
 - **Deployment:** Automated via GitHub Actions (`.github/workflows/deploy.yml`) on every push to the `main` branch. CI includes a `format:check` step using Prettier.
