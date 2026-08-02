@@ -17,10 +17,12 @@
   <p id="hto-error" class="error" hidden></p>
 
   <div class="output-block">
-    <button id="hto-copy" class="code-copy" type="button" title="Copy code" aria-label="Copy code">
-      <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
-      <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" hidden><path d="M20 6 9 17l-5-5"></path></svg>
-    </button>
+    <div class="copy">
+      <button id="hto-copy" type="button" title="Copy to clipboard" aria-label="Copy to clipboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 19a2 2 0 0 1-1-2V2a2 2 0 0 1 1-1h13a2 2 0 0 1 2 1"></path><rect x="6" y="5" width="16" height="18" rx="1.5" ry="1.5"></rect></svg>
+      </button>
+      <span aria-live="polite" role="status"></span>
+    </div>
     <div id="hto-output" class="output" data-placeholder="Paste a HAR file and click Convert."></div>
   </div>
 </div>
@@ -32,8 +34,19 @@
   const input = document.querySelector<HTMLTextAreaElement>("#hto-input")!;
   const convert = document.querySelector<HTMLButtonElement>("#hto-convert")!;
   const copy = document.querySelector<HTMLButtonElement>("#hto-copy")!;
-  const copyIcon = copy.querySelector<SVGElement>(".copy-icon")!;
-  const checkIcon = copy.querySelector<SVGElement>(".check-icon")!;
+  const live = copy.parentElement?.querySelector<HTMLElement>("[aria-live]")!;
+
+  function showFeedback() {
+    const feedback = document.createElement("div");
+    feedback.className = "feedback";
+    feedback.textContent = "Copied!";
+    live.replaceChildren(feedback);
+    requestAnimationFrame(() => feedback.classList.add("show"));
+    window.setTimeout(() => {
+      feedback.classList.remove("show");
+      window.setTimeout(() => feedback.remove(), 250);
+    }, 1500);
+  }
   const output = document.querySelector<HTMLDivElement>("#hto-output")!;
   const error = document.querySelector<HTMLElement>("#hto-error")!;
   const warnings = document.querySelector<HTMLElement>("#hto-warnings")!;
@@ -76,15 +89,10 @@
     if (!text) return;
     try {
       await navigator.clipboard.writeText(text);
-      copyIcon.hidden = true;
-      checkIcon.hidden = false;
-      window.setTimeout(() => {
-        copyIcon.hidden = false;
-        checkIcon.hidden = true;
-      }, 1500);
     } catch {
-      // leave the icon unchanged
+      // clipboard unavailable; keep the icon unchanged
     }
+    showFeedback();
   });
 
   render();

@@ -87,32 +87,103 @@
   background-color: var(--shiki-dark-bg);
 }
 
-.app .code-copy {
+:root[data-theme="light"] {
+  --app-code-fg: #24292e;
+}
+
+:root[data-theme="dark"] {
+  --app-code-fg: #e1e4e8;
+}
+
+.app .output-block .copy {
   position: absolute;
-  z-index: 1;
+  z-index: 2;
   top: 0.5rem;
   right: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.app .output-block .copy button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0;
   padding: 0;
-  border: 1px solid var(--sl-color-hairline);
-  border-radius: 0.25rem;
-  background: var(--sl-color-bg);
-  color: var(--sl-color-gray-2);
+  border: none;
+  border-radius: 0.2rem;
+  background: transparent;
+  color: var(--app-code-fg);
   cursor: pointer;
+  opacity: 0.75;
+  transition:
+    opacity 0.2s ease-in-out,
+    background-color 0.2s ease-in-out;
 }
 
-.app .code-copy:hover {
-  color: var(--sl-color-white);
-  border-color: var(--sl-color-gray-4);
+.app .output-block .copy button:hover,
+.app .output-block .copy button:focus-visible {
+  opacity: 1;
+  background: color-mix(in srgb, var(--app-code-fg) 20%, transparent);
 }
 
-.app .code-copy svg {
-  width: 1rem;
-  height: 1rem;
+.app .output-block .copy svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+@media (hover: hover) {
+  .app .output-block .copy button {
+    width: 2rem;
+    height: 2rem;
+    opacity: 0;
+  }
+
+  .app .output-block:hover .copy button:not(:hover),
+  .app .output-block:focus-within .copy button:not(:hover) {
+    opacity: 0.75;
+  }
+}
+
+.app .output-block .copy .feedback {
+  --tooltip-arrow-size: 0.35rem;
+  position: relative;
+  z-index: 99;
+  align-self: center;
+  padding: 0.125rem 0.75rem;
+  border-radius: 0.2rem;
+  margin-inline-end: var(--tooltip-arrow-size);
+  background: #2ea043;
+  color: #fff;
+  font-family: var(--__sl-font);
+  font-size: 0.75rem;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+  transform: translate3d(0, 0.25rem, 0);
+  transition:
+    opacity 0.2s ease-in-out,
+    transform 0.2s ease-in-out;
+}
+
+.app .output-block .copy .feedback::after {
+  content: "";
+  position: absolute;
+  top: calc(50% - var(--tooltip-arrow-size));
+  right: calc(-2 * (var(--tooltip-arrow-size) - 0.5px));
+  border: var(--tooltip-arrow-size) solid transparent;
+  border-left-color: #2ea043;
+}
+
+.app .output-block .copy .feedback.show {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
 }
 
 .app .toolbar {
