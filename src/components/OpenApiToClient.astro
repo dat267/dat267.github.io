@@ -1,0 +1,89 @@
+---
+---
+
+<div class="app not-content">
+  <label class="field">
+    <span>OpenAPI spec (YAML or JSON)</span>
+    <textarea id="otc-input" class="tall" spellcheck="false" placeholder={'Paste an OpenAPI 3.x spec here. Accepts YAML or JSON.'}></textarea>
+  </label>
+
+  <div class="toolbar">
+    <div class="toolbar-row">
+      <select id="otc-target" aria-label="Target language">
+        <option value="typescript">TypeScript</option>
+        <option value="javascript">JavaScript</option>
+        <option value="go">Go</option>
+        <option value="python">Python</option>
+        <option value="rust">Rust (reqwest)</option>
+        <option value="powershell">PowerShell</option>
+      </select>
+    </div>
+    <div class="toolbar-row">
+      <button id="otc-convert" class="primary" type="button">Convert</button>
+      <button id="otc-copy" class="secondary" type="button">Copy</button>
+    </div>
+  </div>
+
+  <p id="otc-warnings" class="warn" hidden></p>
+  <p id="otc-error" class="error" hidden></p>
+  <pre id="otc-output" class="output">Paste an OpenAPI spec and click Convert.</pre>
+</div>
+
+<script>
+  import { generateClient } from "../scripts/openapi-client/generate.ts";
+  import type { ClientTarget } from "../scripts/openapi-client/generate.ts";
+
+  const input = document.querySelector<HTMLTextAreaElement>("#otc-input")!;
+  const target = document.querySelector<HTMLSelectElement>("#otc-target")!;
+  const convert = document.querySelector<HTMLButtonElement>("#otc-convert")!;
+  const copy = document.querySelector<HTMLButtonElement>("#otc-copy")!;
+  const output = document.querySelector<HTMLPreElement>("#otc-output")!;
+  const error = document.querySelector<HTMLElement>("#otc-error")!;
+  const warnings = document.querySelector<HTMLElement>("#otc-warnings")!;
+
+  function render() {
+    const text = input.value.trim();
+    if (!text) {
+      output.textContent = "Paste an OpenAPI spec and click Convert.";
+      error.hidden = true;
+      warnings.hidden = true;
+      return;
+    }
+    try {
+      const result = generateClient(text, target.value as ClientTarget);
+      output.textContent = result.code;
+      error.hidden = true;
+      if (result.warnings.length) {
+        warnings.textContent = "Warnings: " + result.warnings.join(" | ");
+        warnings.hidden = false;
+      } else {
+        warnings.hidden = true;
+      }
+    } catch (err) {
+      output.textContent = "Fix the error above to see generated code.";
+      error.textContent = err instanceof Error ? err.message : String(err);
+      error.hidden = false;
+      warnings.hidden = true;
+    }
+  }
+
+  convert.addEventListener("click", render);
+  input.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") render();
+  });
+
+  copy.addEventListener("click", async () => {
+    const label = copy.textContent;
+    try {
+      await navigator.clipboard.writeText(output.textContent ?? "");
+      copy.textContent = "Copied!";
+    } catch {
+      copy.textContent = label;
+    }
+    window.setTimeout(() => {
+      copy.textContent = label;
+    }, 1500);
+  });
+
+  render();
+</script>

@@ -1,0 +1,13 @@
+---
+title: OpenAPI to Client
+description: Generate a typed API client SDK from an OpenAPI 3.x spec for TypeScript, JavaScript, Go, Python, Rust, or PowerShell.
+icon: seti:config
+---
+
+import OpenApiToClient from '../../../components/OpenApiToClient.astro';
+
+Paste an OpenAPI 3.x spec below (YAML or JSON) and pick a target language to generate a typed API client. The tool parses the spec, builds typed models from `components.schemas`, and emits one method per operation with path and query parameters, request bodies, and response types. Everything runs in your browser; nothing is uploaded.
+
+<OpenApiToClient />
+
+Models are generated from `components.schemas`; inline request and response bodies become operation-scoped types. `$ref` references are preserved so recursive types work, `allOf` compositions are merged inline, and the base URL comes from the first `servers` entry. Security schemes are reported as a warning — generated clients do not implement authentication.
