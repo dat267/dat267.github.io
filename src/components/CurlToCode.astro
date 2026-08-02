@@ -20,38 +20,57 @@
     </div>
     <div class="toolbar-row">
       <button id="c2c-convert" class="primary" type="button">Convert</button>
-      <button id="c2c-copy" class="secondary" type="button">Copy</button>
     </div>
   </div>
 
   <p id="c2c-warnings" class="warn" hidden></p>
   <p id="c2c-error" class="error" hidden></p>
-  <pre id="c2c-output" class="output">Paste a curl command and click Convert.</pre>
+
+  <div class="output-block">
+    <button id="c2c-copy" class="code-copy" type="button" title="Copy code" aria-label="Copy code">
+      <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
+      <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" hidden><path d="M20 6 9 17l-5-5"></path></svg>
+    </button>
+    <div id="c2c-output" class="output" data-placeholder="Paste a curl command and click Convert."></div>
+  </div>
 </div>
 
 <script>
   import { generateCode } from "../scripts/curl-code/generate.ts";
   import type { CurlTarget } from "../scripts/curl-code/generate.ts";
+  import { highlight } from "../scripts/highlight.ts";
+
+  const LANG: Record<string, string> = {
+    js: "javascript",
+    typescript: "typescript",
+    go: "go",
+    rust: "rust",
+    python: "python",
+    powershell: "powershell",
+  };
 
   const input = document.querySelector<HTMLTextAreaElement>("#c2c-input")!;
   const target = document.querySelector<HTMLSelectElement>("#c2c-target")!;
   const convert = document.querySelector<HTMLButtonElement>("#c2c-convert")!;
   const copy = document.querySelector<HTMLButtonElement>("#c2c-copy")!;
-  const output = document.querySelector<HTMLPreElement>("#c2c-output")!;
+  const copyIcon = copy.querySelector<SVGElement>(".copy-icon")!;
+  const checkIcon = copy.querySelector<SVGElement>(".check-icon")!;
+  const output = document.querySelector<HTMLDivElement>("#c2c-output")!;
   const error = document.querySelector<HTMLElement>("#c2c-error")!;
   const warnings = document.querySelector<HTMLElement>("#c2c-warnings")!;
 
-  function render() {
+  async function render() {
     const text = input.value.trim();
     if (!text) {
-      output.textContent = "Paste a curl command and click Convert.";
+      output.textContent = "";
+      output.dataset.placeholder = "Paste a curl command and click Convert.";
       error.hidden = true;
       warnings.hidden = true;
       return;
     }
     try {
       const result = generateCode(text, target.value as CurlTarget);
-      output.textContent = result.code;
+      output.innerHTML = await highlight(result.code, LANG[target.value] ?? "javascript");
       error.hidden = true;
       if (result.warnings.length) {
         warnings.textContent = "Warnings: " + result.warnings.join(" | ");
@@ -60,7 +79,8 @@
         warnings.hidden = true;
       }
     } catch (err) {
-      output.textContent = "Fix the error above to see generated code.";
+      output.textContent = "";
+      output.dataset.placeholder = "Fix the error above to see generated code.";
       error.textContent = err instanceof Error ? err.message : String(err);
       error.hidden = false;
       warnings.hidden = true;
@@ -73,16 +93,19 @@
   });
 
   copy.addEventListener("click", async () => {
-    const label = copy.textContent;
+    const text = output.querySelector("code")?.textContent ?? "";
+    if (!text) return;
     try {
-      await navigator.clipboard.writeText(output.textContent ?? "");
-      copy.textContent = "Copied!";
+      await navigator.clipboard.writeText(text);
+      copyIcon.hidden = true;
+      checkIcon.hidden = false;
+      window.setTimeout(() => {
+        copyIcon.hidden = false;
+        checkIcon.hidden = true;
+      }, 1500);
     } catch {
-      copy.textContent = label;
+      // leave the icon unchanged
     }
-    window.setTimeout(() => {
-      copy.textContent = label;
-    }, 1500);
   });
 
   render();

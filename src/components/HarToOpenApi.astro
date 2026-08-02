@@ -10,36 +10,46 @@
   <div class="toolbar">
     <div class="toolbar-row">
       <button id="hto-convert" class="primary" type="button">Convert</button>
-      <button id="hto-copy" class="secondary" type="button">Copy</button>
     </div>
   </div>
 
   <p id="hto-warnings" class="warn" hidden></p>
   <p id="hto-error" class="error" hidden></p>
-  <pre id="hto-output" class="output">Paste a HAR file and click Convert.</pre>
+
+  <div class="output-block">
+    <button id="hto-copy" class="code-copy" type="button" title="Copy code" aria-label="Copy code">
+      <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
+      <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" hidden><path d="M20 6 9 17l-5-5"></path></svg>
+    </button>
+    <div id="hto-output" class="output" data-placeholder="Paste a HAR file and click Convert."></div>
+  </div>
 </div>
 
 <script>
   import { generateOpenApi } from "../scripts/har-openapi/generate.ts";
+  import { highlight } from "../scripts/highlight.ts";
 
   const input = document.querySelector<HTMLTextAreaElement>("#hto-input")!;
   const convert = document.querySelector<HTMLButtonElement>("#hto-convert")!;
   const copy = document.querySelector<HTMLButtonElement>("#hto-copy")!;
-  const output = document.querySelector<HTMLPreElement>("#hto-output")!;
+  const copyIcon = copy.querySelector<SVGElement>(".copy-icon")!;
+  const checkIcon = copy.querySelector<SVGElement>(".check-icon")!;
+  const output = document.querySelector<HTMLDivElement>("#hto-output")!;
   const error = document.querySelector<HTMLElement>("#hto-error")!;
   const warnings = document.querySelector<HTMLElement>("#hto-warnings")!;
 
-  function render() {
+  async function render() {
     const text = input.value.trim();
     if (!text) {
-      output.textContent = "Paste a HAR file and click Convert.";
+      output.textContent = "";
+      output.dataset.placeholder = "Paste a HAR file and click Convert.";
       error.hidden = true;
       warnings.hidden = true;
       return;
     }
     try {
       const result = generateOpenApi(text);
-      output.textContent = result.spec;
+      output.innerHTML = await highlight(result.spec, "yaml");
       error.hidden = true;
       if (result.warnings.length) {
         warnings.textContent = "Warnings: " + result.warnings.join(" | ");
@@ -48,7 +58,8 @@
         warnings.hidden = true;
       }
     } catch (err) {
-      output.textContent = "Fix the error above to see generated code.";
+      output.textContent = "";
+      output.dataset.placeholder = "Fix the error above to see generated code.";
       error.textContent = err instanceof Error ? err.message : String(err);
       error.hidden = false;
       warnings.hidden = true;
@@ -61,16 +72,19 @@
   });
 
   copy.addEventListener("click", async () => {
-    const label = copy.textContent;
+    const text = output.querySelector("code")?.textContent ?? "";
+    if (!text) return;
     try {
-      await navigator.clipboard.writeText(output.textContent ?? "");
-      copy.textContent = "Copied!";
+      await navigator.clipboard.writeText(text);
+      copyIcon.hidden = true;
+      checkIcon.hidden = false;
+      window.setTimeout(() => {
+        copyIcon.hidden = false;
+        checkIcon.hidden = true;
+      }, 1500);
     } catch {
-      copy.textContent = label;
+      // leave the icon unchanged
     }
-    window.setTimeout(() => {
-      copy.textContent = label;
-    }, 1500);
   });
 
   render();

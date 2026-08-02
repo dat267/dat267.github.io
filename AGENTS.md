@@ -20,6 +20,7 @@ This project is a personal knowledge base and documentation site powered by [Ast
 - **Static Assets:** Public assets (like icons or scripts) are stored in the `public/` directory (e.g., `public/hello.ps1`, `public/favicon.svg`).
 - **Custom Components:** A `SiteToc.astro` component in `src/components/` renders the index page, dynamically listing all docs with their headings.
 - **Web App Styling:** The client-side web apps' shared styles live in `src/styles/webapps.css` (scoped under `.app`), registered via Starlight's `customCss` in `astro.config.mjs`.
+- **Syntax Highlighting:** Generated output renders as Starlight-style code blocks using Shiki (`github-light`/`github-dark`, the same themes Starlight uses). The shared `src/scripts/highlight.ts` module wraps `shiki/core` (dependency `shiki` + `@shikijs/*`), and the copy button lives on the code block itself.
 - **Client-Side Web Apps:** `Tools/json-to-code`, `Tools/curl-to-code`, `Tools/har-to-openapi`, and `Tools/openapi-to-client` embed fully client-side generators (`JsonToCode.astro`, `CurlToCode.astro`, `HarToOpenApi.astro`, `OpenApiToClient.astro`). Their engines live as pure TypeScript modules in `src/scripts/` and are tested with Node's built-in runner via `npm run test:scripts` (no external test framework).
 - **Route Middleware:** No longer used — directory names match sidebar labels directly (e.g., `Languages/`, `Tools/`, `Platforms/`).
 - **Configuration:** Project settings are defined in `astro.config.mjs` and `package.json`.

@@ -39,10 +39,80 @@
   outline-offset: var(--sl-outline-offset-inside);
 }
 
+.app .output-block {
+  position: relative;
+}
+
 .app .output {
-  overflow-x: auto;
   min-height: 8rem;
+  overflow-x: auto;
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.5rem;
+}
+
+.app .output:empty::before {
+  content: attr(data-placeholder);
+  display: block;
+  padding: 0.75rem 1rem;
+  color: var(--sl-color-gray-3);
+  font-family: var(--__sl-font-mono);
+  font-size: var(--sl-text-code);
+}
+
+.app .output .shiki {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  font-family: var(--__sl-font-mono);
+  font-size: var(--sl-text-code);
+  line-height: 1.6;
+  tab-size: 2;
   white-space: pre;
+}
+
+:root[data-theme="light"] .app .shiki,
+:root[data-theme="light"] .app .shiki span {
+  color: var(--shiki-light);
+}
+
+:root[data-theme="light"] .app .shiki {
+  background-color: var(--shiki-light-bg);
+}
+
+:root[data-theme="dark"] .app .shiki,
+:root[data-theme="dark"] .app .shiki span {
+  color: var(--shiki-dark);
+}
+
+:root[data-theme="dark"] .app .shiki {
+  background-color: var(--shiki-dark-bg);
+}
+
+.app .code-copy {
+  position: absolute;
+  z-index: 1;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.25rem;
+  background: var(--sl-color-bg);
+  color: var(--sl-color-gray-2);
+  cursor: pointer;
+}
+
+.app .code-copy:hover {
+  color: var(--sl-color-white);
+  border-color: var(--sl-color-gray-4);
+}
+
+.app .code-copy svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 .app .toolbar {

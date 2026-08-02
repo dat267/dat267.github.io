@@ -18,39 +18,56 @@
       </select>
       <input id="j2c-root" type="text" value="Root" aria-label="Root type name" />
     </div>
-    <div class="toolbar-row">
-      <button id="j2c-copy" class="primary" type="button">Copy</button>
-    </div>
   </div>
 
   <p id="j2c-error" class="error" hidden></p>
-  <pre id="j2c-output" class="output">Paste JSON above to generate typed code.</pre>
+
+  <div class="output-block">
+    <button id="j2c-copy" class="code-copy" type="button" title="Copy code" aria-label="Copy code">
+      <svg class="copy-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
+      <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" hidden><path d="M20 6 9 17l-5-5"></path></svg>
+    </button>
+    <div id="j2c-output" class="output" data-placeholder="Paste JSON above to generate typed code."></div>
+  </div>
 </div>
 
 <script>
   import { generateCode } from "../scripts/json-code/generate.ts";
   import type { Target } from "../scripts/json-code/generate.ts";
+  import { highlight } from "../scripts/highlight.ts";
+
+  const LANG: Record<string, string> = {
+    typescript: "typescript",
+    go: "go",
+    python: "python",
+    rust: "rust",
+    "json-schema": "json",
+  };
 
   const input = document.querySelector<HTMLTextAreaElement>("#j2c-input")!;
   const target = document.querySelector<HTMLSelectElement>("#j2c-target")!;
   const root = document.querySelector<HTMLInputElement>("#j2c-root")!;
-  const output = document.querySelector<HTMLPreElement>("#j2c-output")!;
+  const output = document.querySelector<HTMLDivElement>("#j2c-output")!;
   const error = document.querySelector<HTMLElement>("#j2c-error")!;
   const copy = document.querySelector<HTMLButtonElement>("#j2c-copy")!;
+  const copyIcon = copy.querySelector<SVGElement>(".copy-icon")!;
+  const checkIcon = copy.querySelector<SVGElement>(".check-icon")!;
 
-  function render() {
+  async function render() {
     const text = input.value.trim();
     if (!text) {
-      output.textContent = "Paste JSON above to generate typed code.";
+      output.textContent = "";
+      output.dataset.placeholder = "Paste JSON above to generate typed code.";
       error.hidden = true;
       return;
     }
     try {
       const code = generateCode(text, target.value as Target, root.value.trim() || "Root");
-      output.textContent = code;
+      output.innerHTML = await highlight(code, LANG[target.value] ?? "typescript");
       error.hidden = true;
     } catch (err) {
-      output.textContent = "Fix the error above to see generated code.";
+      output.textContent = "";
+      output.dataset.placeholder = "Fix the error above to see generated code.";
       error.textContent = err instanceof Error ? err.message : String(err);
       error.hidden = false;
     }
@@ -68,16 +85,19 @@
   target.addEventListener("change", render);
 
   copy.addEventListener("click", async () => {
-    const label = copy.textContent;
+    const text = output.querySelector("code")?.textContent ?? "";
+    if (!text) return;
     try {
-      await navigator.clipboard.writeText(output.textContent ?? "");
-      copy.textContent = "Copied!";
+      await navigator.clipboard.writeText(text);
+      copyIcon.hidden = true;
+      checkIcon.hidden = false;
+      window.setTimeout(() => {
+        copyIcon.hidden = false;
+        checkIcon.hidden = true;
+      }, 1500);
     } catch {
-      copy.textContent = label;
+      // leave the icon unchanged
     }
-    window.setTimeout(() => {
-      copy.textContent = label;
-    }, 1500);
   });
 
   render();
