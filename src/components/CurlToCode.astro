@@ -8,16 +8,20 @@
   </label>
 
   <div class="toolbar">
-    <select id="c2c-target" aria-label="Target language">
-      <option value="js">JavaScript (fetch)</option>
-      <option value="typescript">TypeScript (fetch)</option>
-      <option value="go">Go</option>
-      <option value="rust">Rust (reqwest)</option>
-      <option value="python">Python (requests)</option>
-      <option value="powershell">PowerShell</option>
-    </select>
-    <button id="c2c-convert" class="primary" type="button">Convert</button>
-    <button id="c2c-copy" class="secondary" type="button">Copy</button>
+    <div class="toolbar-row">
+      <select id="c2c-target" aria-label="Target language">
+        <option value="js">JavaScript (fetch)</option>
+        <option value="typescript">TypeScript (fetch)</option>
+        <option value="go">Go</option>
+        <option value="rust">Rust (reqwest)</option>
+        <option value="python">Python (requests)</option>
+        <option value="powershell">PowerShell</option>
+      </select>
+    </div>
+    <div class="toolbar-row">
+      <button id="c2c-convert" class="primary" type="button">Convert</button>
+      <button id="c2c-copy" class="secondary" type="button">Copy</button>
+    </div>
   </div>
 
   <p id="c2c-warnings" class="warn" hidden></p>

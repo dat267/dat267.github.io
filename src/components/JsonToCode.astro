@@ -8,15 +8,19 @@
   </label>
 
   <div class="toolbar">
-    <select id="j2c-target" aria-label="Target language">
-      <option value="typescript">TypeScript</option>
-      <option value="go">Go</option>
-      <option value="python">Python</option>
-      <option value="rust">Rust</option>
-      <option value="json-schema">JSON Schema</option>
-    </select>
-    <input id="j2c-root" type="text" value="Root" aria-label="Root type name" />
-    <button id="j2c-copy" class="primary" type="button">Copy</button>
+    <div class="toolbar-row">
+      <select id="j2c-target" aria-label="Target language">
+        <option value="typescript">TypeScript</option>
+        <option value="go">Go</option>
+        <option value="python">Python</option>
+        <option value="rust">Rust</option>
+        <option value="json-schema">JSON Schema</option>
+      </select>
+      <input id="j2c-root" type="text" value="Root" aria-label="Root type name" />
+    </div>
+    <div class="toolbar-row">
+      <button id="j2c-copy" class="primary" type="button">Copy</button>
+    </div>
   </div>
 
   <p id="j2c-error" class="error" hidden></p>

@@ -47,6 +47,12 @@
 
 .app .toolbar {
   display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.app .toolbar .toolbar-row {
+  display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
