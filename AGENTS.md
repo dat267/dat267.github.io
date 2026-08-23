@@ -18,6 +18,7 @@ This project is a personal knowledge base and documentation site powered by [Ast
 
 - **Content Location:** All documentation pages are located in `src/content/docs/`.
 - **Static Assets:** Public assets (like icons or scripts) are stored in the `public/` directory (e.g., `public/hello.ps1`, `public/favicon.svg`).
+- **Remote TUI Script:** `public/kb-tui.ps1` is a self-contained PowerShell (5.1+/7) TUI for browsing and searching the docs from a terminal (`irm https://dat267.github.io/kb-tui.ps1 | iex`), documented at `Tools/kb-tui`. It fetches the doc index via the GitHub trees API and raw Markdown per page; supports a `-List` headless mode.
 - **Custom Components:** A `SiteToc.astro` component in `src/components/` renders the index page, dynamically listing all docs with their headings.
 - **Web App Styling:** The client-side web apps' shared styles live in `src/styles/webapps.css` (scoped under `.app`), registered via Starlight's `customCss` in `astro.config.mjs`.
 - **Syntax Highlighting:** Generated output renders as Starlight-style code blocks using Shiki (`github-light`/`github-dark`, the same themes Starlight uses). The shared `src/scripts/highlight.ts` module wraps `shiki/core` (dependency `shiki` + `@shikijs/*`), and the copy button lives on the code block itself.

@@ -1,0 +1,26 @@
+---
+title: KB TUI
+description: Browse and search this knowledge base from your terminal with a remote PowerShell script.
+icon: terminal
+---
+
+Run this one-liner in any PowerShell (5.1+ or 7) to open an interactive terminal UI that lets you search, browse, and read the entire knowledge base without leaving your terminal:
+
+```powershell
+irm https://dat267.github.io/kb-tui.ps1 | iex
+```
+
+The script is fully self-contained — it fetches the docs index from the GitHub API and pulls individual pages as raw Markdown on demand, so nothing is installed and nothing is uploaded. Type to filter the doc list by title or section, use the arrow keys to move, and press Enter to read a page.
+
+The navigation is simple:
+
+| Key | Action |
+|:--|:--|
+| `type` | Filter docs by title or section |
+| `↑` / `↓` | Move through the list |
+| `Enter` | Open the selected page |
+| `PgUp` / `PgDn`, `Home`, `End` | Scroll a page |
+| `←` | Back to the list |
+| `q` / `Esc` | Quit |
+
+For non-interactive use, pass `-List` to print the full doc index and exit instead of launching the TUI.
