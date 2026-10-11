@@ -64,9 +64,9 @@ func main() {
 
 The directive must appear as a `var` declaration immediately below the `//go:embed` comment. Patterns support single files, directories, and globs.
 
-## Boilerplate Code
+## Concurrency Patterns
 
-### High-Throughput I/O Concurrency: Fan-In HTTP Fetcher
+### Bounded HTTP Fetching with Fan-In
 
 In an I/O-bound scenario, the CPU spends most of its time waiting for network responses. This pattern uses a worker pool to limit concurrent connections, fetches data concurrently, and uses a multiplexed channel (Fan-In) to collect results safely.
 
