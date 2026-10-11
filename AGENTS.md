@@ -50,9 +50,11 @@ The project uses standard npm scripts for development and deployment:
 - **Snippets:** Focus on complex, high-value inline scripts and one-liners rather than simple, well-known commands.
 - **Code Formatting:** Always remove unnecessary comments and blank lines within code blocks to keep snippets concise and focused.
 
-#### Execution Control
+#### Public Notes and Publishing
 
-- **Commits & Pushes:** Only stage, commit, or push changes when explicitly requested by the user. Do not perform these actions automatically.
+- This is a public GitHub Pages site. Content under `src/content/docs/` is published publicly when pushed. Only add information suitable for public release; do not put secrets, private personal notes, or confidential material in this repository.
+- Search existing documentation and follow its frontmatter, naming, and linking conventions before adding a page. Keep notes useful as standalone public documentation, with enough context and source attribution for readers.
+- Pi's `.pi/extensions/auto-sync.mjs` extension commits workspace changes and pushes them to `origin` when a Pi session shuts down. On SSH authentication failure, it prompts to unlock the key with `ssh-add` and retry. Do not stage, commit, or push manually unless requested; the extension handles shutdown sync.
 
 #### Content Structure
 
